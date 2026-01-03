@@ -131,7 +131,7 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
               onClick={() => handleMockLogin(UserRole.PRODUCER)}
               className="text-[9px] py-3 bg-producer/5 border border-producer/20 text-producer rounded-xl hover:bg-producer/10 uppercase font-black tracking-widest transition-all"
             >
-              Mock Prod
+              Mock Producer
             </button>
             <button
               onClick={() => handleMockLogin(UserRole.CONSUMER)}
