@@ -66,7 +66,7 @@ const LandingPage: React.FC<Props> = ({ currentUser, onSignOut }) => {
                 to="/login" 
                 className="bg-white/5 border border-white/10 px-8 py-2.5 rounded-full font-bold text-sm hover:bg-white/10 transition-all active:scale-95"
               >
-                Sign In
+                Login
               </Link>
             )}
           </div>
