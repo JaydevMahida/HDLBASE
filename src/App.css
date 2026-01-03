@@ -1,0 +1,176 @@
+/* --- Global Resets & Fonts --- */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700;900&display=swap');
+
+:root {
+  --bg-dark: #000000;       /* Pure Black as seen in image */
+  --text-white: #ffffff;
+  --accent-teal: #00bcd4;   /* The bright cyan/teal from the design */
+  --font-main: 'Montserrat', sans-serif;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-main);
+  background-color: var(--bg-dark);
+  color: var(--text-white);
+  overflow-x: hidden; /* Prevent scroll from the side decorative shape */
+}
+
+a { text-decoration: none; color: inherit; transition: 0.3s; }
+ul { list-style: none; padding: 0; margin: 0; }
+
+/* --- Navbar --- */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 25px 50px;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.logo-container {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-text {
+  font-size: 1.8rem;
+  font-weight: 600;
+  letter-spacing: 1px;
+}
+
+.nav-links {
+  display: flex;
+  gap: 40px;
+  align-items: center;
+}
+
+.nav-links a {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #e0e0e0;
+}
+
+.nav-links a:hover {
+  color: var(--accent-teal);
+}
+
+/* --- Hero Section --- */
+.hero-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 80vh; /* Takes up most of the screen */
+  padding: 0 50px;
+  max-width: 1400px;
+  margin: 0 auto;
+  position: relative;
+}
+
+.hero-content {
+  flex: 1;
+  z-index: 2; /* Ensure text is above any background shapes */
+}
+
+.hero-subtitle {
+  font-size: 1.2rem;
+  letter-spacing: 2px;
+  font-weight: 400;
+  color: #cccccc;
+  margin-bottom: 10px;
+  display: block;
+  text-transform: uppercase;
+}
+
+.hero-title {
+  font-size: 4rem; /* Massive text */
+  font-weight: 900;
+  line-height: 1.1;
+  margin: 0 0 20px 0;
+  text-transform: uppercase;
+}
+
+.hero-desc {
+  font-size: 1rem;
+  letter-spacing: 1px;
+  color: #a0a0a0;
+  margin-bottom: 40px;
+  text-transform: uppercase;
+}
+
+/* Pill Button */
+.btn-pill {
+  background-color: white;
+  color: black;
+  padding: 15px 35px;
+  border-radius: 50px; /* Makes it pill-shaped */
+  font-weight: 700;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 15px;
+  transition: transform 0.2s ease;
+}
+
+.btn-pill:hover {
+  transform: scale(1.05);
+  background-color: var(--accent-teal);
+  color: white;
+}
+
+/* --- Hero Image (The Circle) --- */
+.hero-image-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.image-circle-container {
+  position: relative;
+  width: 500px;
+  height: 500px;
+}
+
+/* The circular image mask */
+.image-mask {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 5px solid var(--accent-teal); /* Teal border */
+  overflow: hidden;
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 0 50px rgba(0, 188, 212, 0.2); /* Soft glow */
+}
+
+.image-mask img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The decorative teal shape behind the circle */
+.decorative-shape {
+  position: absolute;
+  bottom: -50px;
+  right: -100px;
+  width: 400px;
+  height: 400px;
+  background-color: var(--accent-teal);
+  border-radius: 50%;
+  z-index: 1;
+  opacity: 0.8;
+}
+
+/* --- Responsive --- */
+@media (max-width: 900px) {
+  .hero-container { flex-direction: column; text-align: center; padding-top: 50px; }
+  .hero-image-wrapper { justify-content: center; margin-top: 50px; }
+  .navbar { flex-direction: column; gap: 20px; }
+  .nav-links { gap: 20px; flex-wrap: wrap; justify-content: center; }
+  .hero-title { font-size: 2.5rem; }
+  .image-circle-container { width: 300px; height: 300px; }
+}
