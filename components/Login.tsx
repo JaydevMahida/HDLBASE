@@ -53,7 +53,7 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
 
       <div className="w-full max-w-md frosted-glass rounded-2xl p-8 shadow-2xl z-10">
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-black tracking-tighter text-accent mb-1">HDLBase</h1>
+          <h1 className="text-4xl font-black tracking-tighter text-accent mb-1"><a href="Landingpage.tsx" className="logo-text">HDLBase</a></h1>
           <p className="text-gray-400 text-xs font-bold uppercase tracking-widest">Chipcrafters Inc.</p>
         </div>
 
