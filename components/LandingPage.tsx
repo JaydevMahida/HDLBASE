@@ -66,7 +66,7 @@ const LandingPage: React.FC<Props> = ({ currentUser, onSignOut }) => {
                 to="/login" 
                 className="bg-white/5 border border-white/10 px-8 py-2.5 rounded-full font-bold text-sm hover:bg-white/10 transition-all active:scale-95"
               >
-                Sign In
+                Login
               </Link>
             )}
           </div>
@@ -249,7 +249,7 @@ const LandingPage: React.FC<Props> = ({ currentUser, onSignOut }) => {
             <a href="#" className="hover:text-white transition-colors">Terms</a>
             <a href="#" className="hover:text-white transition-colors">Twitter</a>
           </div>
-          <p className="text-gray-600 text-[10px] font-bold uppercase tracking-widest">© 2024 Chipcrafters Inc.</p>
+          <p className="text-gray-600 text-[10px] font-bold uppercase tracking-widest">© 2026 Chipcrafters Inc.</p>
         </div>
       </footer>
     </div>
