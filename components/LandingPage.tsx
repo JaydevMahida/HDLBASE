@@ -222,20 +222,7 @@ const LandingPage: React.FC<Props> = ({ currentUser, onSignOut }) => {
       </section>
 
       {/* Footer / CTA */}
-      <section className="py-40 px-6">
-        <div className="max-w-6xl mx-auto bg-white text-matte rounded-[60px] p-16 md:p-32 text-center relative overflow-hidden group">
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(0,0,0,0.05)_0%,transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity"></div>
-          <h2 className="text-5xl md:text-8xl font-black tracking-tighter mb-12 leading-[0.9]">Ready to <br />Build?</h2>
-          <Link 
-            to="/login" 
-            className="inline-block bg-matte text-offwhite px-16 py-6 rounded-[28px] font-black text-2xl hover:scale-105 active:scale-95 transition-all shadow-2xl"
-          >
-            Start Now
-          </Link>
-          <div className="mt-12 text-matte/40 font-black uppercase tracking-[0.3em] text-[10px]">Chipcrafters Inc. Engineering</div>
-        </div>
-      </section>
-
+      
       <footer className="py-20 border-t border-white/5 bg-matte">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-10">
           <div 
