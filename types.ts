@@ -1,7 +1,7 @@
 
 export enum UserRole {
-  PRODUCER = 'PRODUCER',
-  CONSUMER = 'CONSUMER',
+  PRODUCER = 'Contrbibutor',
+  CONSUMER = 'Learner',
   ADMIN = 'ADMIN'
 }
 

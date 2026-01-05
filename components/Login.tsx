@@ -96,7 +96,7 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
                       : 'bg-gunmetal border-white/5 text-gray-600'
                   }`}
                 >
-                  Producer
+                  Contributer
                 </button>
                 <button
                   type="button"
@@ -107,7 +107,7 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
                       : 'bg-gunmetal border-white/5 text-gray-600'
                   }`}
                 >
-                  Consumer
+                  Learner
                 </button>
               </div>
             </div>
@@ -132,13 +132,13 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
               onClick={() => handleMockLogin(UserRole.PRODUCER)}
               className="text-[9px] py-3 bg-producer/5 border border-producer/20 text-producer rounded-xl hover:bg-producer/10 uppercase font-black tracking-widest transition-all"
             >
-              Mock Producer
+              Mock Contributer
             </button>
             <button
               onClick={() => handleMockLogin(UserRole.CONSUMER)}
               className="text-[9px] py-3 bg-consumer/5 border border-consumer/20 text-consumer rounded-xl hover:bg-consumer/10 uppercase font-black tracking-widest transition-all"
             >
-              Mock Consumer
+              Mock Learner
             </button>
           </div>
         </div>

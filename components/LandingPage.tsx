@@ -36,7 +36,7 @@ const LandingPage: React.FC<Props> = ({ currentUser, onSignOut }) => {
             onClick={handleLogoClick}
             className="flex items-center cursor-pointer group"
           >
-            <span className="text-2xl font-black tracking-tighter group-hover:text-accent transition-colors"><img src={logo} alt="LOGO" /></span>
+            <span className="text-2xl font-black tracking-tighter group-hover:text-accent transition-colors"><img src={logo} alt="LOGO" className="w-32 h-auto mx-auto block"/></span>
           </div>
           
           <div className="hidden md:flex gap-10 text-sm font-bold text-gray-400 uppercase tracking-widest">
