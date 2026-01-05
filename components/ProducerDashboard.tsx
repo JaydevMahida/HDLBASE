@@ -155,7 +155,7 @@ const ProducerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
           <div className="flex items-center gap-6">
             <div className="text-right hidden sm:block">
               <p className="text-xs font-black uppercase text-accent">{profile.displayName}</p>
-              <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Producer Mode</p>
+              <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">Contributor Mode</p>
             </div>
             <button onClick={onSignOut} className="text-[10px] font-black text-gray-500 hover:text-red-400 uppercase tracking-widest transition-colors">Sign Out</button>
           </div>
