@@ -229,7 +229,7 @@ const LandingPage: React.FC<Props> = ({ currentUser, onSignOut }) => {
             onClick={handleLogoClick}
             className="flex items-center cursor-pointer"
           >
-            <span className="font-black tracking-tighter text-lg">HDLBase</span>
+            <span className="font-black tracking-tighter text-lg"><img src={logo} alt="LOGO" className="w-32 h-auto mx-auto block"/></span>
           </div>
           <div className="flex gap-12 text-[10px] font-black uppercase tracking-widest text-gray-600">
             <a href="#" className="hover:text-white transition-colors">Privacy</a>
