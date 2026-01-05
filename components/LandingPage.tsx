@@ -88,7 +88,7 @@ const LandingPage: React.FC<Props> = ({ currentUser, onSignOut }) => {
             Hardware Design <br />Reimagined.
           </h1>
           <p className="text-xl md:text-2xl text-gray-400 mb-14 max-w-3xl mx-auto leading-relaxed font-medium">
-            HDLBase is the ultimate practice ground for electronics students. Solve RTL challenges, simulate Verilog/VHDL in-browser, and build a professional hardware portfolio.
+            HDLBase is the ultimate practice ground for Electronics Students. Solve RTL challenges, simulate Verilog/VHDL in-browser, and build a professional hardware portfolio.
           </p>
           <div className="flex flex-col sm:flex-row gap-6 justify-center">
             <Link 
