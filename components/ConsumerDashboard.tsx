@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '../types';
+import logo from '../Assets/hdlbasewhitefinal.png';
 
 interface Question {
   id: string;
@@ -68,7 +69,7 @@ endmodule`);
               onClick={handleLogoClick}
               className="flex items-center cursor-pointer group"
             >
-              <h1 className="text-xl font-black tracking-tighter"><a href="" className="logo-text">HDLBase</a></h1>
+              <h1 className="text-xl font-black tracking-tighter"><a href="" className="logo-text"><img src={logo} alt="LOGO" /></a></h1>
             </div>
 
             <div className="flex bg-white/5 p-1 rounded-xl">
