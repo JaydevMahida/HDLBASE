@@ -234,7 +234,6 @@ const LandingPage: React.FC<Props> = ({ currentUser, onSignOut }) => {
           <div className="flex gap-12 text-[10px] font-black uppercase tracking-widest text-gray-600">
             <a href="#" className="hover:text-white transition-colors">Privacy</a>
             <a href="#" className="hover:text-white transition-colors">Terms</a>
-            <a href="#" className="hover:text-white transition-colors">Twitter</a>
           </div>
           <p className="text-gray-600 text-[10px] font-bold uppercase tracking-widest">© 2026 Chipcrafters Inc.</p>
         </div>
