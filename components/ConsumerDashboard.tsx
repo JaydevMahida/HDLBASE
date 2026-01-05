@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '../types';
-import logo from '../Assets/hdlbasewhitefinal.png';
+import logo from '../Assets/hdlbasewhitefinal-removebg-preview.png';
 
 interface Question {
   id: string;

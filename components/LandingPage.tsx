@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import logo from '../Assets/hdlbasewhitefinal.png';
+import logo from '../Assets/hdlbasewhitefinal-removebg-preview.png';
 interface Props {
   currentUser: any;
   onSignOut: () => void;

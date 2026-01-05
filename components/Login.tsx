@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { UserRole, UserProfile } from '../types';
-import logo from '../Assets/hdlbasewhitefinal.png';
+import logo from '../Assets/hdlbasewhitefinal-removebg-preview.png';
 
 interface Props {
   onLoginSuccess: () => void;
