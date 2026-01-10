@@ -83,6 +83,7 @@ const App: React.FC = () => {
                   email: currentUser.email,
                   role: UserRole.LEARNER,
                   displayName: 'User',
+                  username: 'user123',
                   category: 'Learner'
                 }} onSignOut={handleSignOut} />
               )
