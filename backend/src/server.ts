@@ -12,6 +12,7 @@ const server = http.createServer(app);
 const startServer = async () => {
     try {
         // Initialize services (Mock Mode handles potential failures gracefully);
+        await initFirebase();
         await connectRedis();
 
         server.listen(PORT, () => {
