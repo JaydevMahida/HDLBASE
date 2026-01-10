@@ -26,5 +26,5 @@ EXPOSE 5000
 ENV PORT=5000
 ENV NODE_ENV=production
 
-# Start the server
-CMD ["npm", "start"]
+# Start the server using the compiled JS
+CMD ["node", "dist/server.js"]
