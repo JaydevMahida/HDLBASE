@@ -13,39 +13,56 @@ const App: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Requirement: Refresh should go to landing page
+  // Listen for auth state changes
   useEffect(() => {
-    // Clear any existing session on hard refresh to force landing page
-    localStorage.removeItem('hdlbase_mock_session');
+    const { auth, db } = require('./firebase'); // Late import to avoid cycles or ensure init
+    const { onAuthStateChanged } = require('firebase/auth');
+    const { doc, getDoc } = require('firebase/firestore');
 
-    // Explicitly reset state
-    setCurrentUser(null);
-    setUserProfile(null);
-    setLoading(false);
+    const unsubscribe = onAuthStateChanged(auth, async (user: any) => {
+      if (user) {
+        // User is signed in
+        try {
+          const userRef = doc(db, "users", user.uid);
+          const userSnap = await getDoc(userRef);
 
-    // If the URL is not root, we can optionally force it to root
-    if (window.location.hash !== '#/' && window.location.hash !== '') {
-      window.location.hash = '#/';
-    }
+          if (userSnap.exists()) {
+            const profile = userSnap.data() as UserProfile;
+            setCurrentUser(user);
+            setUserProfile(profile);
+          } else {
+            // Fallback if profile doesn't exist yet (e.g. fresh signup before DB write)
+            setCurrentUser(user);
+            // Profile might be null, but we have a user. 
+            // Optionally fetch mock/default or wait for it.
+          }
+        } catch (error) {
+          console.error("Error fetching user profile:", error);
+        }
+      } else {
+        // User is signed out
+        setCurrentUser(null);
+        setUserProfile(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
   }, []);
 
   const handleLoginSuccess = () => {
-    const mockSession = localStorage.getItem('hdlbase_mock_session');
-    if (mockSession) {
-      const mockUser = JSON.parse(mockSession);
-      const localProfiles = JSON.parse(localStorage.getItem('hdlbase_mock_users') || '{}');
-      const profile = localProfiles[mockUser.uid];
-
-      setCurrentUser(mockUser);
-      setUserProfile(profile || null);
-    }
+    // No-op: onAuthStateChanged will handle the state update
   };
 
-  const handleSignOut = () => {
-    localStorage.removeItem('hdlbase_mock_session');
-    setCurrentUser(null);
-    setUserProfile(null);
-    window.location.hash = '#/';
+  const handleSignOut = async () => {
+    try {
+      const { auth } = await import('./firebase');
+      await auth.signOut();
+      // State updates handled by onAuthStateChanged
+      window.location.hash = '#/';
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
   };
 
   if (loading) {

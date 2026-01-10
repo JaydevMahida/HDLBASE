@@ -20,7 +20,7 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      const { signInWithPopup, GoogleAuthProvider } = await import("firebase/auth");
+      const { signInWithPopup } = await import("firebase/auth");
       const { doc, setDoc, getDoc } = await import("firebase/firestore"); // Import Firestore functions
       const { auth, googleProvider, db } = await import("../firebase"); // Import db
 
@@ -51,64 +51,30 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
 
       await setDoc(userRef, profileData, { merge: true });
 
-      const idToken = await user.getIdToken();
-
-      // 3. maintain Local Storage for current app compatibility
-      const sessionUser = {
-        uid: user.uid,
-        email: user.email || '',
-        displayName: user.displayName || 'User',
-        token: idToken
-      };
-
-      // Persist to local storage to match existing mock flow
-      const localProfiles = JSON.parse(localStorage.getItem('hdlbase_mock_users') || '{}');
-      localProfiles[user.uid] = profileData; // Use the final profile data
-      localStorage.setItem('hdlbase_mock_users', JSON.stringify(localProfiles));
-      localStorage.setItem('hdlbase_mock_session', JSON.stringify(sessionUser));
-
-      onLoginSuccess();
+      // Local storage for session is no longer needed with onAuthStateChanged in App.tsx
+      setLoading(false);
+      // App.tsx listener will handle redirection
     } catch (error) {
       console.error("Google Login Error:", error);
       alert("Login failed. Check console for details.");
-    } finally {
       setLoading(false);
     }
   };
 
-  const handleMockLogin = (selectedRole: UserRole) => {
-    setLoading(true);
-    const mockUid = `mock_${selectedRole.toLowerCase()}_${Date.now()}`;
-    const mockUser = {
-      uid: mockUid,
-      email: `${selectedRole.toLowerCase()}@chipcrafters.mock`,
-      displayName: `${selectedRole.charAt(0) + selectedRole.slice(1).toLowerCase()}`,
-      token: mockUid
-    };
-
-    const profile: UserProfile = {
-      uid: mockUid,
-      email: mockUser.email,
-      role: selectedRole,
-      displayName: mockUser.displayName,
-      username: mockUser.displayName.toLowerCase().replace(/\s+/g, '_'),
-      category: selectedRole === UserRole.CONTRIBUTOR ? 'HDL Designer' : 'Learner'
-    };
-
-    const localProfiles = JSON.parse(localStorage.getItem('hdlbase_mock_users') || '{}');
-    localProfiles[mockUid] = profile;
-    localStorage.setItem('hdlbase_mock_users', JSON.stringify(localProfiles));
-    localStorage.setItem('hdlbase_mock_session', JSON.stringify(mockUser));
-
-    setTimeout(() => {
-      setLoading(false);
-      onLoginSuccess();
-    }, 800);
-  };
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    handleMockLogin(role);
+    setLoading(true);
+    try {
+      const { signInWithEmailAndPassword } = await import("firebase/auth");
+      const { auth } = await import("../firebase");
+
+      await signInWithEmailAndPassword(auth, email, password);
+      // Success managed by App.tsx
+    } catch (error: any) {
+      console.error("Login Error:", error);
+      alert("Login failed: " + error.message);
+      setLoading(false);
+    }
   };
 
   return (
@@ -123,7 +89,7 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
         </div>
 
         <div className="space-y-6">
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1">
               <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Email Address</label>
               <input
@@ -219,27 +185,6 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
             </svg>
             <span className="text-xs uppercase tracking-widest">Sign in with Google</span>
           </button>
-
-          <div className="relative flex items-center py-2">
-            <div className="flex-grow border-t border-white/10"></div>
-            <span className="flex-shrink mx-4 text-gray-500 text-[9px] uppercase font-black tracking-widest">Quick Access</span>
-            <div className="flex-grow border-t border-white/10"></div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <button
-              onClick={() => handleMockLogin(UserRole.CONTRIBUTOR)}
-              className="text-[9px] py-3 bg-contributor/5 border border-contributor/20 text-contributor rounded-xl hover:bg-contributor/10 uppercase font-black tracking-widest transition-all"
-            >
-              Mock Contributor
-            </button>
-            <button
-              onClick={() => handleMockLogin(UserRole.LEARNER)}
-              className="text-[9px] py-3 bg-learner/5 border border-learner/20 text-learner rounded-xl hover:bg-learner/10 uppercase font-black tracking-widest transition-all"
-            >
-              Mock Learner
-            </button>
-          </div>
 
           <div className="flex items-center justify-center gap-2 mt-4">
             <p className="text-[10px] text-gray-500 font-bold uppercase tracking-widest">Don't have an account?</p>

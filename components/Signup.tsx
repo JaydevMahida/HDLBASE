@@ -18,45 +18,86 @@ const Signup: React.FC<Props> = ({ onLoginSuccess }) => {
     const [role, setRole] = useState<UserRole>(UserRole.LEARNER);
     const [loading, setLoading] = useState(false);
 
-    const handleMockSignup = (selectedRole: UserRole) => {
+    // Real Signup Logic
+    const handleSignup = async (e: React.FormEvent) => {
+        e.preventDefault();
+
         if (password !== confirmPassword) {
             alert("Passwords do not match!");
             return;
         }
 
         setLoading(true);
-        const mockUid = `mock_${selectedRole.toLowerCase()}_${Date.now()}`;
-        const finalUsername = username || `user_${Date.now()}`;
-        const mockUser = {
-            uid: mockUid,
-            email: email || `${selectedRole.toLowerCase()}@chipcrafters.mock`,
-            displayName: finalUsername,
-            username: finalUsername
-        };
+        try {
+            // Dynamic imports for Firebase SDKs
+            const { createUserWithEmailAndPassword, updateProfile } = await import("firebase/auth");
+            const { doc, setDoc } = await import("firebase/firestore");
+            const { auth, db } = await import("../firebase");
 
-        const profile: UserProfile = {
-            uid: mockUid,
-            email: mockUser.email,
-            role: selectedRole,
-            displayName: mockUser.displayName,
-            username: mockUser.username,
-            category: selectedRole === UserRole.CONTRIBUTOR ? 'HDL Designer' : 'Learner'
-        };
+            // 1. Create Authentication User
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+            const finalUsername = username || `user_${Date.now()}`;
 
-        const localProfiles = JSON.parse(localStorage.getItem('hdlbase_mock_users') || '{}');
-        localProfiles[mockUid] = profile;
-        localStorage.setItem('hdlbase_mock_users', JSON.stringify(localProfiles));
-        localStorage.setItem('hdlbase_mock_session', JSON.stringify(mockUser));
+            // Update Auth Profile Display Name
+            await updateProfile(user, {
+                displayName: finalUsername
+            });
 
-        setTimeout(() => {
-            setLoading(false);
-            onLoginSuccess();
-        }, 800);
+            // 2. Create User Profile in Firestore
+            const userRef = doc(db, "users", user.uid);
+            const profileData: UserProfile = {
+                uid: user.uid,
+                email: user.email || '',
+                role: role,
+                displayName: finalUsername,
+                username: finalUsername.toLowerCase().replace(/\s+/g, '_'),
+                category: role === UserRole.CONTRIBUTOR ? 'HDL Designer' : 'Learner'
+            };
+
+            await setDoc(userRef, profileData);
+
+            // Success handled by App.tsx onAuthStateChanged
+        } catch (error: any) {
+            console.error("Signup Error:", error);
+            alert("Signup failed: " + error.message);
+            setLoading(false); // Only stop loading on error, success redirects or waits for state change
+        }
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        handleMockSignup(role);
+    // Google Login Logic (Reused from Login.tsx with slight mods for signup context)
+    const handleGoogleLogin = async () => {
+        setLoading(true);
+        try {
+            const { signInWithPopup } = await import("firebase/auth");
+            const { doc, setDoc, getDoc } = await import("firebase/firestore");
+            const { auth, googleProvider, db } = await import("../firebase");
+
+            const result = await signInWithPopup(auth, googleProvider);
+            const user = result.user;
+
+            // Check if user exists to preserve role or create new
+            const userRef = doc(db, "users", user.uid);
+            const userSnap = await getDoc(userRef);
+
+            if (!userSnap.exists()) {
+                const profileData: UserProfile = {
+                    uid: user.uid,
+                    email: user.email || '',
+                    role: role, // Use selected role for new users
+                    displayName: user.displayName || 'User',
+                    username: (user.displayName || 'User').toLowerCase().replace(/\s+/g, '_'),
+                    category: role === UserRole.CONTRIBUTOR ? 'HDL Designer' : 'Learner'
+                };
+                await setDoc(userRef, profileData);
+            }
+            // If exists, onAuthStateChanged in App.tsx will pick it up
+
+        } catch (error: any) {
+            console.error("Google Login Error:", error);
+            alert("Google Login failed: " + error.message);
+            setLoading(false);
+        }
     };
 
     return (
@@ -71,7 +112,7 @@ const Signup: React.FC<Props> = ({ onLoginSuccess }) => {
                 </div>
 
                 <div className="space-y-6">
-                    <form onSubmit={handleSubmit} className="space-y-4">
+                    <form onSubmit={handleSignup} className="space-y-4">
                         <div className="space-y-1">
                             <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Username</label>
                             <input
@@ -198,7 +239,7 @@ const Signup: React.FC<Props> = ({ onLoginSuccess }) => {
                     </div>
 
                     <button
-                        onClick={() => handleMockSignup(role)}
+                        onClick={handleGoogleLogin}
                         className="w-full bg-white text-gray-800 font-bold py-4 rounded-xl hover:scale-[1.02] active:scale-[0.98] transition-all shadow-2xl flex items-center justify-center gap-3"
                     >
                         <svg className="w-5 h-5" viewBox="0 0 24 24">
