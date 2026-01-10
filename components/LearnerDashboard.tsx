@@ -51,7 +51,8 @@ endmodule`);
     const fetchData = async () => {
       try {
         const session = localStorage.getItem('hdlbase_mock_session');
-        const token = session ? JSON.parse(session).uid : '';
+        const sessionData = JSON.parse(session);
+        const token = sessionData.token || sessionData.uid;
         const headers = { 'Authorization': `Bearer ${token}` };
 
 
@@ -125,7 +126,7 @@ endmodule`);
         return;
       }
       const user = JSON.parse(session);
-      const token = user.uid; // In mock mode, we use the UID as the token
+      const token = user.token || user.uid;
 
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/simulation/run`, {
         method: 'POST',

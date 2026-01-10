@@ -47,7 +47,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const fetchData = async () => {
     try {
       const session = localStorage.getItem('hdlbase_mock_session');
-      const token = session ? JSON.parse(session).uid : '';
+      const sessionData = JSON.parse(session);
+      const token = sessionData.token || sessionData.uid;
       const headers = { 'Authorization': `Bearer ${token}` };
 
       // Fetch Modules
@@ -99,7 +100,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
 
     try {
       const session = localStorage.getItem('hdlbase_mock_session');
-      const token = session ? JSON.parse(session).uid : '';
+      const sessionData = JSON.parse(session);
+      const token = sessionData.token || sessionData.uid;
 
       const payload = {
         name: formData.get('moduleName') as string,
@@ -153,7 +155,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
 
     try {
       const session = localStorage.getItem('hdlbase_mock_session');
-      const token = session ? JSON.parse(session).uid : '';
+      const sessionData = JSON.parse(session);
+      const token = sessionData.token || sessionData.uid;
 
       const payload = {
         text: questionText,

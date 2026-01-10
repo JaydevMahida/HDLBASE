@@ -51,11 +51,14 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
 
       await setDoc(userRef, profileData, { merge: true });
 
+      const idToken = await user.getIdToken();
+
       // 3. maintain Local Storage for current app compatibility
       const sessionUser = {
         uid: user.uid,
         email: user.email || '',
-        displayName: user.displayName || 'User'
+        displayName: user.displayName || 'User',
+        token: idToken
       };
 
       // Persist to local storage to match existing mock flow
@@ -79,7 +82,8 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
     const mockUser = {
       uid: mockUid,
       email: `${selectedRole.toLowerCase()}@chipcrafters.mock`,
-      displayName: `${selectedRole.charAt(0) + selectedRole.slice(1).toLowerCase()}`
+      displayName: `${selectedRole.charAt(0) + selectedRole.slice(1).toLowerCase()}`,
+      token: mockUid
     };
 
     const profile: UserProfile = {
