@@ -44,9 +44,9 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
       // If user exists, we might want to preserve their existing role/data instead of overwriting with default 'role' state
       if (userSnap.exists()) {
         const existingData = userSnap.data() as UserProfile;
-        // Merge existing role if present, otherwise use selected role
-        profileData.role = existingData.role || role;
-        profileData.category = existingData.role === UserRole.CONTRIBUTOR ? 'HDL Designer' : 'Learner';
+        // UPDATE: Allow role switching. Always use the currently selected role from UI.
+        profileData.role = role;
+        profileData.category = role === UserRole.CONTRIBUTOR ? 'HDL Designer' : 'Learner';
       }
 
       await setDoc(userRef, profileData, { merge: true });
