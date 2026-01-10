@@ -36,6 +36,7 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
 
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [questionText, setQuestionText] = useState('');
+  const [questionDifficulty, setQuestionDifficulty] = useState('Medium');
   const [options, setOptions] = useState<string[]>(['', '', '', '']);
   const [correctOption, setCorrectOption] = useState<number>(0);
 
@@ -66,6 +67,10 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
           size: m.size || '1 KB',
           date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'Recent'
         })));
+
+        if (modulesData.message && modulesData.message.includes('Mock Mode')) {
+          alert("WARNING: Backend is in MOCK MODE. Data will NOT be saved. Please configure Firebase Credentials on Render.");
+        }
       }
 
       // Fetch Quizzes
@@ -127,9 +132,13 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
         await fetchData(); // Reload list
         setShowUpload(false);
         form.reset();
+      } else {
+        const errData = await response.json();
+        alert(`Upload Failed: ${errData.message || 'Unknown error'}`);
       }
     } catch (err) {
       console.error('Upload failed', err);
+      alert("Upload error: Check console");
     } finally {
       setUploading(false);
     }
