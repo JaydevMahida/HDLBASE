@@ -46,10 +46,20 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
         try {
             const decodedToken = await admin.auth().verifyIdToken(token);
 
-            // Retrieve custom claims or user data from DB if needed
-            // For now, assuming role is in custom claims or we might fetch user from DB
-            // Let's assume custom claims 'role' exists, or default to LEARNER
-            const role = (decodedToken.role as UserRole) || UserRole.LEARNER;
+            // Fetch user role from Firestore
+            let role = UserRole.LEARNER; // Default
+            try {
+                const db = admin.firestore();
+                const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    if (userData && userData.role) {
+                        role = userData.role as UserRole;
+                    }
+                }
+            } catch (dbError) {
+                console.warn('Failed to fetch user role from DB, defaulting to LEARNER', dbError);
+            }
 
             const user: DecodedUser = {
                 uid: decodedToken.uid,
