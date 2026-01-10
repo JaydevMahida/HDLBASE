@@ -59,6 +59,7 @@ export const protect = async (req: Request, res: Response, next: NextFunction) =
             req.user = user;
             next();
         } catch (err) {
+            console.error('Token verification failed:', err);
             return next(new AppError('Invalid token. Please log in again.', 401));
         }
 

@@ -16,6 +16,7 @@ export const initFirebase = async () => {
             // Prefer JSON content (easier for Render)
             if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
                 const serviceAccount = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+                console.log('Parameters from JSON creds - Project ID:', serviceAccount.project_id);
                 credential = admin.credential.cert(serviceAccount);
             } else {
                 // Fallback to standard file path
