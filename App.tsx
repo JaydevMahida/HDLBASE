@@ -8,6 +8,11 @@ import ContributorDashboard from './components/ContributorDashboard';
 import LearnerDashboard from './components/LearnerDashboard';
 import Signup from './components/Signup';
 
+// Helper to get imports safely
+import { auth, db } from './firebase';
+import { onAuthStateChanged } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -15,11 +20,9 @@ const App: React.FC = () => {
 
   // Listen for auth state changes
   useEffect(() => {
-    const { auth, db } = require('./firebase'); // Late import to avoid cycles or ensure init
-    const { onAuthStateChanged } = require('firebase/auth');
-    const { doc, getDoc } = require('firebase/firestore');
-
+    console.log("App mounted, setting up auth listener...");
     const unsubscribe = onAuthStateChanged(auth, async (user: any) => {
+      console.log("Auth State Changed:", user ? "User Found" : "No User");
       if (user) {
         // User is signed in
         try {
@@ -28,13 +31,13 @@ const App: React.FC = () => {
 
           if (userSnap.exists()) {
             const profile = userSnap.data() as UserProfile;
+            console.log("Profile loaded:", profile.role);
             setCurrentUser(user);
             setUserProfile(profile);
           } else {
-            // Fallback if profile doesn't exist yet (e.g. fresh signup before DB write)
+            console.log("User exists but no profile doc found.");
+            // Fallback if profile doesn't exist yet
             setCurrentUser(user);
-            // Profile might be null, but we have a user. 
-            // Optionally fetch mock/default or wait for it.
           }
         } catch (error) {
           console.error("Error fetching user profile:", error);
@@ -56,9 +59,7 @@ const App: React.FC = () => {
 
   const handleSignOut = async () => {
     try {
-      const { auth } = await import('./firebase');
       await auth.signOut();
-      // State updates handled by onAuthStateChanged
       window.location.hash = '#/';
     } catch (error) {
       console.error("Error signing out:", error);
