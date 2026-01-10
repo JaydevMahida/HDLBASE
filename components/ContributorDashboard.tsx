@@ -36,7 +36,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
 
   const [editingQuestionId, setEditingQuestionId] = useState<string | null>(null);
   const [questionText, setQuestionText] = useState('');
-  const [questionDifficulty, setQuestionDifficulty] = useState('Medium');
+  const [options, setOptions] = useState<string[]>(['', '', '', '']);
+  const [correctOption, setCorrectOption] = useState<number>(0);
 
 
 
