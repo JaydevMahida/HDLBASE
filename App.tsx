@@ -34,10 +34,29 @@ const App: React.FC = () => {
             console.log("Profile loaded:", profile.role);
             setCurrentUser(user);
             setUserProfile(profile);
+
+            // CRITICAL: Save token for API calls in children components
+            const token = await user.getIdToken();
+            localStorage.setItem('hdlbase_mock_session', JSON.stringify({
+              uid: user.uid,
+              token: token,
+              role: profile.role,
+              email: user.email
+            }));
+
           } else {
             console.log("User exists but no profile doc found.");
             // Fallback if profile doesn't exist yet
             setCurrentUser(user);
+
+            // Still save token
+            const token = await user.getIdToken();
+            localStorage.setItem('hdlbase_mock_session', JSON.stringify({
+              uid: user.uid,
+              token: token,
+              role: UserRole.LEARNER,
+              email: user.email
+            }));
           }
         } catch (error) {
           console.error("Error fetching user profile:", error);
