@@ -45,7 +45,7 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
 endmodule`);
 
   const [stats, setStats] = useState<UserStats | null>(null);
-  const [modules, setModules] = useState<string[]>([]);
+  const [modules, setModules] = useState<any[]>([]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -67,7 +67,7 @@ endmodule`);
         const modulesRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/modules`, { headers });
         const modulesData = await modulesRes.json();
         if (modulesData.status === 'success') {
-          setModules(modulesData.data.map((m: any) => m.name));
+          setModules(modulesData.data);
         }
 
         // Fetch Quizzes (for Assessment)
@@ -101,10 +101,62 @@ endmodule`);
     navigate('/dashboard');
   };
 
-  const handleAnswer = (index: number) => {
-    if (index === questions[currentQuestionIndex].correct) setScore(score + 1);
-    if (currentQuestionIndex + 1 < questions.length) setCurrentQuestionIndex(currentQuestionIndex + 1);
-    else setQuizFinished(true);
+  const handleAnswer = async (index: number) => {
+    let newScore = score;
+    if (index === questions[currentQuestionIndex].correct) {
+      newScore = score + 1;
+      setScore(newScore);
+    }
+
+    if (currentQuestionIndex + 1 < questions.length) {
+      setCurrentQuestionIndex(currentQuestionIndex + 1);
+    } else {
+      setQuizFinished(true);
+      // Submit Results
+      try {
+        const session = localStorage.getItem('hdlbase_mock_session');
+        if (session) {
+          const sessionData = JSON.parse(session);
+          const token = sessionData.token || sessionData.uid;
+
+          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/quizzes/results`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              score: newScore,
+              total: questions.length,
+              details: 'Quiz completed'
+            })
+          });
+
+          // Refresh stats
+          const statsRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/users/stats`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const statsData = await statsRes.json();
+          if (statsData.status === 'success') setStats(statsData.data);
+        }
+      } catch (error) {
+        console.error("Failed to submit results", error);
+      }
+    }
+  };
+
+  const handleDownload = (module: any) => {
+    if (!module.code) {
+      alert("No code available for this module.");
+      return;
+    }
+    const element = document.createElement("a");
+    const file = new Blob([module.code], { type: 'text/plain' });
+    element.href = URL.createObjectURL(file);
+    element.download = `${module.name.replace(/\s+/g, '_')}.v`;
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
   };
 
   const resetQuiz = () => {
@@ -197,11 +249,16 @@ endmodule`);
               <p className="text-gray-400 font-medium">Download verified RTL building blocks for your student projects.</p>
             </header>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {(modules.length > 0 ? modules : ['Fast Fourier Transform', 'RISC-V 32I Core', 'DDR Controller', 'UART Subsystem', 'HDMI Controller', 'Ethernet MAC']).map((item) => (
-                <div key={item} className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-learner/50 transition-all group">
+              {(modules.length > 0 ? modules : [
+                { name: 'Fast Fourier Transform', code: '' },
+                { name: 'RISC-V 32I Core', code: '' },
+                { name: 'DDR Controller', code: '' },
+                { name: 'UART Subsystem', code: '' }
+              ]).map((item) => (
+                <div key={item.name} className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-learner/50 transition-all group">
                   <div className="text-[10px] text-gray-600 mb-3 font-black uppercase tracking-widest">Educational IP</div>
-                  <h4 className="text-xl font-bold text-accent mb-8 group-hover:text-learner transition-colors">{item}</h4>
-                  <button className="w-full py-3 bg-white/5 text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-learner hover:text-white transition-all">Download .v</button>
+                  <h4 className="text-xl font-bold text-accent mb-8 group-hover:text-learner transition-colors">{item.name}</h4>
+                  <button onClick={() => handleDownload(item)} className="w-full py-3 bg-white/5 text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-learner hover:text-white transition-all">Download .v</button>
                 </div>
               ))}
             </div>

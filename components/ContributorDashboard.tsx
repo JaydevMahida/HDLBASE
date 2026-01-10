@@ -38,6 +38,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const [questionText, setQuestionText] = useState('');
   const [questionDifficulty, setQuestionDifficulty] = useState('Medium');
 
+
+
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -106,6 +108,7 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
       const payload = {
         name: formData.get('moduleName') as string,
         language: formData.get('language') as string,
+        code: formData.get('moduleCode') as string,
         type: 'IP Core',
         description: 'Uploaded from Contributor Dashboard'
       };
@@ -140,6 +143,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
       setEditingQuestionId(null);
       setQuestionText('');
       setQuestionDifficulty('Medium');
+      setOptions(['', '', '', '']);
+      setCorrectOption(0);
     }
     setShowQuestionModal(true);
   };
@@ -161,8 +166,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
       const payload = {
         text: questionText,
         difficulty: questionDifficulty,
-        options: ['Option A', 'Option B', 'Option C', 'Option D'], // Default options as UI doesn't have input for them yet
-        correct: 0
+        options: options,
+        correct: correctOption
       };
 
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/quizzes`, {
