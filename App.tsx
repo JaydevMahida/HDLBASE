@@ -4,8 +4,9 @@ import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import { UserRole, UserProfile } from './types';
 import LandingPage from './components/LandingPage';
 import Login from './components/Login';
-import ProducerDashboard from './components/ProducerDashboard';
-import ConsumerDashboard from './components/ConsumerDashboard';
+import ContributorDashboard from './components/ContributorDashboard';
+import LearnerDashboard from './components/LearnerDashboard';
+import Signup from './components/Signup';
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<any>(null);
@@ -16,7 +17,7 @@ const App: React.FC = () => {
   useEffect(() => {
     // Clear any existing session on hard refresh to force landing page
     localStorage.removeItem('hdlbase_mock_session');
-    
+
     // Explicitly reset state
     setCurrentUser(null);
     setUserProfile(null);
@@ -24,7 +25,7 @@ const App: React.FC = () => {
 
     // If the URL is not root, we can optionally force it to root
     if (window.location.hash !== '#/' && window.location.hash !== '') {
-       window.location.hash = '#/';
+      window.location.hash = '#/';
     }
   }, []);
 
@@ -34,7 +35,7 @@ const App: React.FC = () => {
       const mockUser = JSON.parse(mockSession);
       const localProfiles = JSON.parse(localStorage.getItem('hdlbase_mock_users') || '{}');
       const profile = localProfiles[mockUser.uid];
-      
+
       setCurrentUser(mockUser);
       setUserProfile(profile || null);
     }
@@ -59,31 +60,36 @@ const App: React.FC = () => {
     <Router>
       <Routes>
         <Route path="/" element={<LandingPage currentUser={currentUser} onSignOut={handleSignOut} />} />
-        
-        <Route 
-          path="/login" 
-          element={currentUser ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleLoginSuccess} />} 
+
+        <Route
+          path="/login"
+          element={currentUser ? <Navigate to="/dashboard" /> : <Login onLoginSuccess={handleLoginSuccess} />}
         />
-        
-        <Route 
-          path="/dashboard" 
+
+        <Route
+          path="/signup"
+          element={currentUser ? <Navigate to="/dashboard" /> : <Signup onLoginSuccess={handleLoginSuccess} />}
+        />
+
+        <Route
+          path="/dashboard"
           element={
             currentUser ? (
-              userProfile?.role === UserRole.PRODUCER ? (
-                <ProducerDashboard profile={userProfile} onSignOut={handleSignOut} />
+              userProfile?.role === UserRole.CONTRIBUTOR ? (
+                <ContributorDashboard profile={userProfile} onSignOut={handleSignOut} />
               ) : (
-                <ConsumerDashboard profile={userProfile || {
+                <LearnerDashboard profile={userProfile || {
                   uid: currentUser.uid,
                   email: currentUser.email,
-                  role: UserRole.CONSUMER,
+                  role: UserRole.LEARNER,
                   displayName: 'User',
-                  category: 'Consumer'
+                  category: 'Learner'
                 }} onSignOut={handleSignOut} />
               )
             ) : (
               <Navigate to="/" />
             )
-          } 
+          }
         />
 
         <Route path="*" element={<Navigate to="/" />} />

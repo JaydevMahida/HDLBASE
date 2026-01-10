@@ -1,0 +1,46 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is signed in
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    // Helper function to check if user is the owner of the document
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // User Profiles:
+    // - Users can read and write their own profile
+    // - (Optional) Allow others to read public profile info if needed
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+    
+    // IP Modules (Repository):
+    // - Everyone can read (public repository)
+    // - Only Authenticated users (Contributors) can create/upload (simplified)
+    match /modules/{moduleId} {
+      allow read: if true;
+      allow create: if isSignedIn(); 
+      // Ideally check for 'contributor' role in token or user doc, 
+      // but starting simple: any signed-in user can contribute.
+      allow update, delete: if isSignedIn() && resource.data.authorId == request.auth.uid;
+    }
+
+    // Quizzes (Assessments):
+    // - Everyone can read quizzes to take them
+    // - Only Authenticated users can create/manage
+    match /quizzes/{quizId} {
+      allow read: if true;
+      allow write: if isSignedIn();
+    }
+
+    // Simulation/Playground logs or user-specific data
+    match /simulations/{simId} {
+      allow read, write: if isSignedIn() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

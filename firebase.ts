@@ -6,12 +6,12 @@ import { getFirestore } from 'firebase/firestore';
 
 // Note: In a production environment, these would be populated from environment variables.
 const firebaseConfig = {
-  apiKey: "AIzaSy_fake_key_for_demo_purposes",
-  authDomain: "hdlbase-chipcrafters.firebaseapp.com",
-  projectId: "hdlbase-chipcrafters",
-  storageBucket: "hdlbase-chipcrafters.appspot.com",
-  messagingSenderId: "123456789",
-  appId: "1:123456789:web:abcdef123456"
+  apiKey: "AIzaSyBSUJ3y6PFrdN7QF2kPgPX95BjJtZ0hrws",
+  authDomain: "hdlbase-4098c.firebaseapp.com",
+  projectId: "hdlbase-4098c",
+  storageBucket: "hdlbase-4098c.firebasestorage.app",
+  messagingSenderId: "90007737592",
+  appId: "1:90007737592:web:301578908a7fcb55ae570d"
 };
 
 const app = initializeApp(firebaseConfig);
