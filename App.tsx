@@ -49,12 +49,22 @@ const App: React.FC = () => {
             // Fallback if profile doesn't exist yet
             setCurrentUser(user);
 
+            // Try to keep existing role from session if available, otherwise default to Learner
+            let fallbackRole = UserRole.LEARNER;
+            try {
+              const existingSession = localStorage.getItem('hdlbase_mock_session');
+              if (existingSession) {
+                const parsed = JSON.parse(existingSession);
+                if (parsed.role) fallbackRole = parsed.role;
+              }
+            } catch (e) { console.warn("Session parse error", e); }
+
             // Still save token
             const token = await user.getIdToken();
             localStorage.setItem('hdlbase_mock_session', JSON.stringify({
               uid: user.uid,
               token: token,
-              role: UserRole.LEARNER,
+              role: fallbackRole,
               email: user.email
             }));
           }
