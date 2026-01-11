@@ -28,7 +28,13 @@ interface MockQuestion {
 
 const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'hdl' | 'mcq' | 'team' | 'profile'>('hdl');
+  const [activeTab, setActiveTab] = useState<'hdl' | 'mcq' | 'team' | 'profile'>(
+    () => (localStorage.getItem('contributor_active_tab') as any) || 'hdl'
+  );
+
+  useEffect(() => {
+    localStorage.setItem('contributor_active_tab', activeTab);
+  }, [activeTab]);
   const [showUpload, setShowUpload] = useState(false);
   const [showQuestionModal, setShowQuestionModal] = useState(false);
   const [files, setFiles] = useState<MockFile[]>([]);

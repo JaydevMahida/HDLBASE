@@ -26,7 +26,13 @@ interface UserStats {
 
 const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'modules' | 'quiz' | 'playground' | 'progress'>('modules');
+  const [activeTab, setActiveTab] = useState<'modules' | 'quiz' | 'playground' | 'progress'>(
+    () => (localStorage.getItem('learner_active_tab') as any) || 'modules'
+  );
+
+  useEffect(() => {
+    localStorage.setItem('learner_active_tab', activeTab);
+  }, [activeTab]);
 
   // Quiz State
   const [quizzes, setQuizzes] = useState<any[]>([]);
