@@ -123,10 +123,13 @@ export const getQuizResults = async (req: Request, res: Response, next: NextFunc
 
         const snapshot = await db.collection('results')
             .where('quizId', '==', id)
-            .orderBy('timestamp', 'desc')
             .get();
 
-        const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+        const results = snapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
+        console.log(`[QuizResults] Fetched ${results.length} results for quiz ${id}`);
 
         res.status(200).json({ status: 'success', data: results });
     } catch (error) {
