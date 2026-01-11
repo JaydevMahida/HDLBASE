@@ -10,7 +10,7 @@ const router = Router();
 const simulationSchema = Joi.object({
     code: Joi.string().required(),
     language: Joi.string().valid('Verilog', 'VHDL', 'SystemVerilog').default('Verilog'),
-    testbench: Joi.string().optional()
+    testbenchCode: Joi.string().optional().allow('')
 });
 
 router.post('/run',
