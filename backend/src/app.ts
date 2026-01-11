@@ -11,7 +11,11 @@ const app: Application = express();
 
 // Middleware
 app.use(helmet());
-app.use(cors());
+app.use(cors({
+    origin: '*', // Allow all origins for now to support cross-device testing
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
 app.use(morgan('dev'));
 app.use(compression());
 app.use(json());
