@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 import { getDb } from '../config/firebase';
+import * as admin from 'firebase-admin';
 
 export const getQuizzes = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -96,9 +97,15 @@ export const submitResult = async (req: Request, res: Response, next: NextFuncti
         await resultRef.set(result);
 
         if (quizId) {
-            await db.collection('quizzes').doc(quizId).update({
-                submissionCount: (await import('firebase-admin')).firestore.FieldValue.increment(1)
-            });
+            try {
+                await db.collection('quizzes').doc(quizId).update({
+                    submissionCount: admin.firestore.FieldValue.increment(1)
+                });
+                console.log(`[Quiz] Incremented submission count for quizId: ${quizId}`);
+            } catch (incError) {
+                console.error(`[Quiz] Failed to increment submission count for ${quizId}:`, incError);
+                // Non-critial error, don't fail the request
+            }
         }
 
         res.status(201).json({ status: 'success', data: result });
