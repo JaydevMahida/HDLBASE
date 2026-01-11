@@ -71,10 +71,21 @@ const protect = async (req, res, next) => {
         // Verify token
         try {
             const decodedToken = await admin.auth().verifyIdToken(token);
-            // Retrieve custom claims or user data from DB if needed
-            // For now, assuming role is in custom claims or we might fetch user from DB
-            // Let's assume custom claims 'role' exists, or default to LEARNER
-            const role = decodedToken.role || types_1.UserRole.LEARNER;
+            // Fetch user role from Firestore
+            let role = types_1.UserRole.LEARNER; // Default
+            try {
+                const db = admin.firestore();
+                const userDoc = await db.collection('users').doc(decodedToken.uid).get();
+                if (userDoc.exists) {
+                    const userData = userDoc.data();
+                    if (userData && userData.role) {
+                        role = userData.role;
+                    }
+                }
+            }
+            catch (dbError) {
+                console.warn('Failed to fetch user role from DB, defaulting to LEARNER', dbError);
+            }
             const user = {
                 uid: decodedToken.uid,
                 email: decodedToken.email || '',
@@ -84,6 +95,7 @@ const protect = async (req, res, next) => {
             next();
         }
         catch (err) {
+            console.error('!!! TRACER_ERROR: Token verification failed !!!', err);
             return next(new error_1.AppError('Invalid token. Please log in again.', 401));
         }
     }

@@ -43,4 +43,5 @@ router.use(auth_1.protect);
 router.route('/')
     .get(quizController.getQuizzes)
     .post((0, rbac_1.restrictTo)(types_1.UserRole.CONTRIBUTOR, types_1.UserRole.ADMIN), quizController.createQuiz);
+router.post('/results', quizController.submitResult);
 exports.default = router;

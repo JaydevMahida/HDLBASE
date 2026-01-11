@@ -43,5 +43,6 @@ router.route('/')
     .get(moduleController.getModules)
     .post(auth_1.protect, (0, rbac_1.restrictTo)(types_1.UserRole.CONTRIBUTOR, types_1.UserRole.ADMIN), moduleController.createModule);
 router.route('/:id')
-    .get(moduleController.getModule);
+    .get(moduleController.getModule)
+    .put(auth_1.protect, (0, rbac_1.restrictTo)(types_1.UserRole.CONTRIBUTOR, types_1.UserRole.ADMIN), moduleController.updateModule);
 exports.default = router;

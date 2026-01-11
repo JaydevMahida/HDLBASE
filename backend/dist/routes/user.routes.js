@@ -42,6 +42,8 @@ const router = (0, express_1.Router)();
 router.use(auth_1.protect); // Protect all routes
 router.route('/')
     .get((0, rbac_1.restrictTo)(types_1.UserRole.ADMIN), userController.getUsers);
+// Add this BEFORE dynamic routes like /:id to avoid conflict
+router.get('/stats', userController.getUserStats);
 router.route('/:id')
     .get(userController.getUser);
 exports.default = router;
