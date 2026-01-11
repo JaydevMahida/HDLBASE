@@ -48,6 +48,7 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const [modules, setModules] = useState<any[]>([]);
   const [downloadingModule, setDownloadingModule] = useState<any>(null);
   const [downloadFormat, setDownloadFormat] = useState('Verilog');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -112,6 +113,8 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
         // Let's implement the 'Completed' badge logic optimistically for the current session at least.
       } catch (err) {
         console.error('Failed to fetch learner data', err);
+      } finally {
+        setLoading(false);
       }
     };
     fetchData();
@@ -304,18 +307,19 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
               <p className="text-gray-400 font-medium">Download verified RTL building blocks for your student projects.</p>
             </header>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
-              {(modules.length > 0 ? modules : [
-                { name: 'Fast Fourier Transform', code: '' },
-                { name: 'RISC-V 32I Core', code: '' },
-                { name: 'DDR Controller', code: '' },
-                { name: 'UART Subsystem', code: '' }
-              ]).map((item) => (
-                <div key={item.name} className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-learner/50 transition-all group">
-                  <div className="text-[10px] text-gray-600 mb-3 font-black uppercase tracking-widest">Educational IP</div>
-                  <h4 className="text-xl font-bold text-accent mb-8 group-hover:text-learner transition-colors">{item.name}</h4>
-                  <button onClick={() => handleDownloadClick(item)} className="w-full py-3 bg-white/5 text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-learner hover:text-white transition-all">Download</button>
-                </div>
-              ))}
+              {loading ? (
+                <div className="col-span-full py-20 text-center text-gray-500 font-bold animate-pulse">Loading modules...</div>
+              ) : modules.length > 0 ? (
+                modules.map((item) => (
+                  <div key={item.name} className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-learner/50 transition-all group">
+                    <div className="text-[10px] text-gray-600 mb-3 font-black uppercase tracking-widest">Educational IP</div>
+                    <h4 className="text-xl font-bold text-accent mb-8 group-hover:text-learner transition-colors">{item.name}</h4>
+                    <button onClick={() => handleDownloadClick(item)} className="w-full py-3 bg-white/5 text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-learner hover:text-white transition-all">Download</button>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full py-20 text-center text-gray-500 font-bold">No modules found.</div>
+              )}
             </div>
           </div>
         )}

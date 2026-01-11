@@ -48,6 +48,7 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
 
 
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   // Stats / Submissions View
   const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
@@ -122,6 +123,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
       }
     } catch (err) {
       console.error('Failed to fetch dashboard data', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -410,7 +413,9 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {files.map(file => (
+              {loading ? (
+                <div className="col-span-full py-40 text-center text-gray-500 font-bold animate-pulse">Loading repository...</div>
+              ) : files.map(file => (
                 <div key={file.id} className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-contributor/50 transition-all group cursor-default">
                   <div className="flex justify-between items-start mb-6">
                     <div className="w-12 h-12 bg-contributor/10 rounded-2xl flex items-center justify-center text-contributor">
@@ -426,7 +431,7 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                   </div>
                 </div>
               ))}
-              {files.length === 0 && (
+              {!loading && files.length === 0 && (
                 <div className="col-span-full py-40 text-center border-2 border-dashed border-white/5 rounded-[40px] text-gray-600 font-black uppercase tracking-widest text-xs">
                   Repository Empty. Initializing Required.
                 </div>
