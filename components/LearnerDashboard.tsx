@@ -36,19 +36,14 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
   const [quizFinished, setQuizFinished] = useState(false);
+
+  // Playground State
+  const [code, setCode] = useState('// Implementation\nmodule design(output a);\n  assign a = 1;\nendmodule');
+  const [testbenchCode, setTestbenchCode] = useState('// Testbench\nmodule tb;\n  wire a;\n  design uut(a);\n  initial begin\n    $monitor("Time=%0d a=%b", $time, a);\n    #10 $finish;\n  end\nendmodule');
   const [compilationOutput, setCompilationOutput] = useState<string>('');
   const [isCompiling, setIsCompiling] = useState(false);
-  const [code, setCode] = useState(`module counter (
-  input clk,
-  input rst,
-  output reg [3:0] count
-);
-  always @(posedge clk or posedge rst) begin
-    if (rst) count <= 4'b0;
-    else count <= count + 1;
-  end
-endmodule`);
 
+  // General Dashboard State
   const [stats, setStats] = useState<UserStats | null>(null);
   const [modules, setModules] = useState<any[]>([]);
   const [downloadingModule, setDownloadingModule] = useState<any>(null);
@@ -90,7 +85,7 @@ endmodule`);
           const myResultsData = await myResultsRes.json();
           if (myResultsData.status === 'success') {
             const completedIds = new Set(myResultsData.data.map((r: any) => r.quizId as string));
-            setCompletedQuizIds(completedIds);
+            setCompletedQuizIds(completedIds as Set<string>);
           }
         } catch (e) {
           console.warn("Failed to fetch my-results");
@@ -247,6 +242,7 @@ endmodule`);
         },
         body: JSON.stringify({
           code: code,
+          testbenchCode: testbenchCode,
           language: 'Verilog'
         })
       });
@@ -420,24 +416,47 @@ endmodule`);
                 {isCompiling ? 'Compiling...' : 'Compile & Test'}
               </button>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 flex-grow">
-              <div className="lg:col-span-3">
-                <textarea
-                  className="w-full h-full bg-gunmetal border border-white/10 rounded-[32px] p-16 font-mono text-base text-accent/80 focus:border-learner outline-none transition-all resize-none shadow-inner leading-relaxed overflow-auto"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  spellCheck={false}
-                  placeholder="Enter your Verilog or VHDL logic here..."
-                />
+            <div className="flex-grow flex flex-col gap-6">
+              {/* Dual Editors */}
+              <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[400px]">
+                {/* Design Editor */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center px-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">design.sv</span>
+                  </div>
+                  <textarea
+                    className="w-full h-full bg-gunmetal border border-white/10 rounded-[20px] p-6 font-mono text-sm text-accent/80 focus:border-learner outline-none transition-all resize-none shadow-inner leading-relaxed overflow-auto"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    spellCheck={false}
+                    placeholder="// Design Code"
+                  />
+                </div>
+
+                {/* Testbench Editor */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center px-2">
+                    <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">testbench.sv</span>
+                  </div>
+                  <textarea
+                    className="w-full h-full bg-gunmetal border border-white/10 rounded-[20px] p-6 font-mono text-sm text-accent/80 focus:border-learner outline-none transition-all resize-none shadow-inner leading-relaxed overflow-auto"
+                    value={testbenchCode}
+                    onChange={(e) => setTestbenchCode(e.target.value)}
+                    spellCheck={false}
+                    placeholder="// Testbench Code"
+                  />
+                </div>
               </div>
-              <div className="lg:col-span-2 bg-matte border border-white/5 rounded-[32px] p-8 flex flex-col shadow-2xl">
-                <h4 className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-6">Console Output</h4>
-                <div className="flex-grow font-mono text-xs text-learner/70 bg-black/40 p-6 rounded-2xl overflow-auto border border-white/5 whitespace-pre-wrap">
+
+              {/* Console Output */}
+              <div className="h-[200px] bg-black/40 border-t-2 border-white/5 p-0 flex flex-col">
+                <div className="bg-white/5 px-6 py-2 flex items-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-learner"></span>
+                  <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Console</span>
+                </div>
+                <div className="flex-grow font-mono text-xs text-green-400/90 p-6 overflow-auto whitespace-pre-wrap font-medium">
                   {compilationOutput || (
-                    <>
-                      <span className="text-gray-600">[info]</span> Ready to compile.<br />
-                      <span className="text-gray-600">[info]</span> Waiting for input...
-                    </>
+                    <span className="text-gray-600 opacity-50">// Output will appear here after compilation...</span>
                   )}
                 </div>
               </div>
