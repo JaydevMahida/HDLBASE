@@ -556,7 +556,7 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                   <div className="flex justify-between items-center">
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">HDL Source Code</label>
                     <label className="cursor-pointer text-[9px] font-black uppercase tracking-widest text-contributor hover:bg-contributor/10 px-2 py-1 rounded-md transition-all">
-                      <input type="file" accept=".v,.sv,.vhd,.txt" className="hidden" onChange={handleFileUpload} />
+                      <input type="file" accept=".v,.sv,.vhd,.txt,.zip" className="hidden" onChange={handleFileUpload} />
                       📂 Import from Disk
                     </label>
                   </div>

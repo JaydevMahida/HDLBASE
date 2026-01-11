@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import JSZip from 'jszip';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '../types';
 import logo from '../Assets/hdlbasewhitefinal-removebg-preview.png';
@@ -200,9 +201,24 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
     setDownloadFormat('Verilog'); // Default
   };
 
-  const confirmDownload = () => {
+  const confirmDownload = async () => {
     if (!downloadingModule || !downloadingModule.code) {
       alert("No code available to download.");
+      return;
+    }
+
+    if (downloadFormat === 'ZIP') {
+      const zip = new JSZip();
+      zip.file(`${downloadingModule.name.replace(/\s+/g, '_')}.v`, downloadingModule.code);
+      const content = await zip.generateAsync({ type: "blob" });
+
+      const element = document.createElement("a");
+      element.href = URL.createObjectURL(content);
+      element.download = `${downloadingModule.name.replace(/\s+/g, '_')}.zip`;
+      document.body.appendChild(element);
+      element.click();
+      document.body.removeChild(element);
+      setDownloadingModule(null);
       return;
     }
 
@@ -541,6 +557,7 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                       <option value="Verilog">Verilog (.v)</option>
                       <option value="VHDL">VHDL (.vhd)</option>
                       <option value="SystemVerilog">SystemVerilog (.sv)</option>
+                      <option value="ZIP">ZIP Archive (.zip)</option>
                     </select>
                   </div>
                 </div>
