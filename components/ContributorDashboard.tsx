@@ -53,10 +53,26 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
   const [currentSubmissions, setCurrentSubmissions] = useState<any[]>([]);
   const [loadingSubmissions, setLoadingSubmissions] = useState(false);
+  const [activeQuizId, setActiveQuizId] = useState<string | null>(null);
 
+  // Auto-Refresh Main Data
   useEffect(() => {
-    fetchData();
+    fetchData(); // Initial load
+    const interval = setInterval(fetchData, 15000); // Poll every 15s
+    return () => clearInterval(interval);
   }, []);
+
+  // Auto-Refresh Submissions Modal
+  useEffect(() => {
+    let interval: any;
+    if (showSubmissionsModal && activeQuizId) {
+      // Poll every 5s for new submissions
+      interval = setInterval(() => {
+        fetchSubmissions(activeQuizId, true); // silent refresh
+      }, 5000);
+    }
+    return () => clearInterval(interval);
+  }, [showSubmissionsModal, activeQuizId]);
 
   const fetchData = async () => {
     try {
@@ -291,10 +307,13 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
     }
   };
 
-  const fetchSubmissions = async (quizId: string) => {
-    setLoadingSubmissions(true);
-    setShowSubmissionsModal(true);
-    setCurrentSubmissions([]);
+  const fetchSubmissions = async (quizId: string, silent = false) => {
+    if (!silent) setLoadingSubmissions(true);
+    if (!silent) setShowSubmissionsModal(true);
+    setActiveQuizId(quizId);
+
+    // Don't clear current submissions if silent refresh to avoid flickering
+    if (!silent) setCurrentSubmissions([]);
 
     try {
       const session = localStorage.getItem('hdlbase_mock_session');
@@ -311,7 +330,7 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
     } catch (err) {
       console.error("Failed to fetch submissions", err);
     } finally {
-      setLoadingSubmissions(false);
+      if (!silent) setLoadingSubmissions(false);
     }
   };
 
