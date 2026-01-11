@@ -50,6 +50,8 @@ endmodule`);
 
   const [stats, setStats] = useState<UserStats | null>(null);
   const [modules, setModules] = useState<any[]>([]);
+  const [downloadingModule, setDownloadingModule] = useState<any>(null);
+  const [downloadFormat, setDownloadFormat] = useState('Verilog');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -155,18 +157,32 @@ endmodule`);
     }
   };
 
-  const handleDownload = (module: any) => {
-    if (!module.code) {
-      alert("No code available for this module.");
+  const handleDownloadClick = (module: any) => {
+    setDownloadingModule(module);
+    setDownloadFormat('Verilog'); // Default
+  };
+
+  const confirmDownload = () => {
+    if (!downloadingModule || !downloadingModule.code) {
+      alert("No code available to download.");
       return;
     }
+
+    let extension = '.v';
+    switch (downloadFormat) {
+      case 'VHDL': extension = '.vhd'; break;
+      case 'SystemVerilog': extension = '.sv'; break;
+      default: extension = '.v';
+    }
+
     const element = document.createElement("a");
-    const file = new Blob([module.code], { type: 'text/plain' });
+    const file = new Blob([downloadingModule.code], { type: 'text/plain' });
     element.href = URL.createObjectURL(file);
-    element.download = `${module.name.replace(/\s+/g, '_')}.v`;
+    element.download = `${downloadingModule.name.replace(/\s+/g, '_')}${extension}`;
     document.body.appendChild(element);
     element.click();
     document.body.removeChild(element);
+    setDownloadingModule(null);
   };
 
   const resetQuiz = () => {
@@ -267,7 +283,7 @@ endmodule`);
                 <div key={item.name} className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-learner/50 transition-all group">
                   <div className="text-[10px] text-gray-600 mb-3 font-black uppercase tracking-widest">Educational IP</div>
                   <h4 className="text-xl font-bold text-accent mb-8 group-hover:text-learner transition-colors">{item.name}</h4>
-                  <button onClick={() => handleDownload(item)} className="w-full py-3 bg-white/5 text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-learner hover:text-white transition-all">Download .v</button>
+                  <button onClick={() => handleDownloadClick(item)} className="w-full py-3 bg-white/5 text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-learner hover:text-white transition-all">Download</button>
                 </div>
               ))}
             </div>
@@ -389,6 +405,49 @@ endmodule`);
           </div>
         )}
 
+        {/* Download Modal */}
+        {
+          downloadingModule && (
+            <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-gunmetal w-full max-w-sm rounded-[32px] p-8 border border-white/10 shadow-2xl transform animate-in zoom-in duration-300">
+                <h3 className="text-xl font-black tracking-tight mb-6">Download Module</h3>
+                <div className="space-y-4 mb-8">
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 block mb-2">Module</label>
+                    <div className="text-white font-bold">{downloadingModule.name}</div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 block mb-2">Format</label>
+                    <select
+                      value={downloadFormat}
+                      onChange={(e) => setDownloadFormat(e.target.value)}
+                      className="w-full bg-matte border border-white/10 rounded-xl px-4 py-3 text-offwhite focus:border-learner outline-none transition-colors appearance-none font-bold text-sm"
+                    >
+                      <option value="Verilog">Verilog (.v)</option>
+                      <option value="VHDL">VHDL (.vhd)</option>
+                      <option value="SystemVerilog">SystemVerilog (.sv)</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setDownloadingModule(null)}
+                    className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDownload}
+                    className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest bg-learner text-white rounded-xl shadow-xl shadow-learner/20 hover:brightness-110 transition-all"
+                  >
+                    Download
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        }
+
         {activeTab === 'progress' && (
           <div className="max-w-4xl mx-auto py-12">
             <div className="space-y-8 animate-fade-in">
@@ -444,8 +503,8 @@ endmodule`);
             </div>
           </div>
         )}
-      </main>
-    </div>
+      </main >
+    </div >
   );
 };
 
