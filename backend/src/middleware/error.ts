@@ -44,7 +44,7 @@ export const globalErrorHandler = (
         } else {
             res.status(500).json({
                 status: 'error',
-                message: 'Something went very wrong!',
+                message: `DEBUG ERROR: ${err.message}`,
             });
         }
     }
