@@ -84,6 +84,18 @@ endmodule`);
           setQuizzes(quizzesData.data);
         }
 
+        // Fetch user's completed quizzes
+        try {
+          const myResultsRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/quizzes/my-results`, { headers });
+          const myResultsData = await myResultsRes.json();
+          if (myResultsData.status === 'success') {
+            const completedIds = new Set(myResultsData.data.map((r: any) => r.quizId as string));
+            setCompletedQuizIds(completedIds);
+          }
+        } catch (e) {
+          console.warn("Failed to fetch my-results");
+        }
+
         // Fetch User Results to mark completed quizzes
         // We'll just fetch user stats or specific results endpoint if available.
         // For now, let's assume we can get 'my results' or we just infer from stats? 
@@ -328,7 +340,6 @@ endmodule`);
                       <h3 className="text-2xl font-bold mb-4 group-hover:text-learner transition-colors">{quiz.title}</h3>
                       <p className="text-sm text-gray-400 mb-8 line-clamp-2">{quiz.description}</p>
                       <div className="flex justify-between items-center">
-                        <span className="text-[10px] bg-white/5 px-3 py-1 rounded-lg uppercase tracking-widest font-bold text-gray-400">Intermediate</span>
                         {completedQuizIds.has(quiz.id) ? (
                           <div className="flex gap-2">
                             <span className="text-[10px] font-black uppercase tracking-widest bg-green-500/10 text-green-500 px-3 py-3 rounded-xl border border-green-500/20">Done ✅</span>
@@ -501,34 +512,7 @@ endmodule`);
                 </div>
               </div>
 
-              {/* Old Grid Below */}
-              <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5">
-                <h2 className="text-4xl font-black tracking-tight mb-16 text-center">Your Learning Path</h2>
-                <div className="space-y-8">
-                  {[
-                    { name: 'Digital Logic Foundations', progress: 100, status: 'Certified', color: 'bg-green-500' },
-                    { name: 'Verilog RTL Design', progress: 45, status: 'In Progress', color: 'bg-learner' },
-                    { name: 'SystemVerilog Verification', progress: 0, status: 'Locked', color: 'bg-gray-800' }
-                  ].map(course => (
-                    <div key={course.name} className="bg-gunmetal p-10 rounded-[40px] border border-white/5 flex items-center justify-between group hover:border-accent/10 transition-all">
-                      <div className="flex-grow">
-                        <h4 className="text-2xl font-bold mb-4">{course.name}</h4>
-                        <div className="flex items-center gap-6">
-                          <div className="flex-grow h-3 bg-white/5 rounded-full overflow-hidden">
-                            <div className={`h-full ${course.color} transition-all duration-1000 ease-out`} style={{ width: `${course.progress}%` }}></div>
-                          </div>
-                          <span className="text-xs font-black font-mono text-gray-500">{course.progress}%</span>
-                        </div>
-                      </div>
-                      <div className="ml-16">
-                        <span className={`text-[10px] font-black uppercase px-4 py-2 rounded-xl border ${course.status === 'Certified' ? 'bg-green-500/10 border-green-500 text-green-500' : 'bg-white/5 border-white/5 text-gray-600'}`}>
-                          {course.status}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+
             </div>
           </div>
         )}

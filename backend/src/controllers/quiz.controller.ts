@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-
 import { getDb } from '../config/firebase';
 import * as admin from 'firebase-admin';
 
@@ -38,7 +37,7 @@ export const createQuiz = async (req: Request, res: Response, next: NextFunction
                 correct: Number(q.correct),
                 difficulty: q.difficulty || 'Medium'
             })),
-            difficulty: 'Mixed', // You could calculate average difficulty
+            difficulty: 'Mixed',
             createdAt: new Date().toISOString(),
             authorId: req.user?.uid || 'anonymous',
             authorName: req.user?.name || 'Contributor'
@@ -65,7 +64,7 @@ export const submitResult = async (req: Request, res: Response, next: NextFuncti
 
         const result = {
             userId: req.user?.uid,
-            userName: req.user?.email?.split('@')[0] || 'Unknown', // Simplified name fallback
+            userName: req.user?.email?.split('@')[0] || 'Unknown',
             quizId,
             score,
             total,
@@ -74,53 +73,43 @@ export const submitResult = async (req: Request, res: Response, next: NextFuncti
         };
 
         // Check if user already submitted this quiz
+        let existingResultId: string | null = null;
         if (quizId) {
             const existingSnapshot = await db.collection('results')
                 .where('userId', '==', req.user?.uid)
                 .where('quizId', '==', quizId)
+                .limit(1)
                 .get();
 
             if (!existingSnapshot.empty) {
-                return res.status(403).json({ status: 'error', message: 'You have already completed this quiz.' });
+                existingResultId = existingSnapshot.docs[0].id;
             }
         }
 
         const batch = db.batch();
 
-        // 1. Save Result
-        const resultRef = db.collection('results').doc();
-        batch.set(resultRef, result);
+        // 1. Save Result (Create or Update)
+        const resultRef = existingResultId
+            ? db.collection('results').doc(existingResultId)
+            : db.collection('results').doc();
 
-        // 2. Increment Quiz Counter (if quizId is valid)
-        if (quizId) {
+        if (existingResultId) {
+            batch.update(resultRef, { ...result, timestamp: new Date().toISOString() });
+        } else {
+            batch.set(resultRef, result);
+        }
+
+        // 2. Increment Quiz Counter (only if NEW submission)
+        if (quizId && !existingResultId) {
             const quizRef = db.collection('quizzes').doc(quizId);
-            // We need admin.firestore.FieldValue.increment(1) 
-            // BUT we only have 'getDb' exported. 
-            // We need to import admin to get FieldValue.
-            // Let's assume we can get it from the db instance or re-import admin.
-            // For safety, let's use a simpler approach or I need to update imports.
-            // Let's just create a quick helper or do a direct update.
-            // Wait, I can't easily grab FieldValue without importing admin.
-            // Let's check imports.
+            batch.update(quizRef, {
+                submissionCount: admin.firestore.FieldValue.increment(1)
+            });
         }
 
-        // Re-do with correct imports in next step if necessary. 
-        // Actually, let's just do individual writes for now to be safe with types.
-        await resultRef.set(result);
+        await batch.commit();
 
-        if (quizId) {
-            try {
-                await db.collection('quizzes').doc(quizId).update({
-                    submissionCount: admin.firestore.FieldValue.increment(1)
-                });
-                console.log(`[Quiz] Incremented submission count for quizId: ${quizId}`);
-            } catch (incError) {
-                console.error(`[Quiz] Failed to increment submission count for ${quizId}:`, incError);
-                // Non-critial error, don't fail the request
-            }
-        }
-
-        res.status(201).json({ status: 'success', data: result });
+        res.status(201).json({ status: 'success', data: { id: resultRef.id, ...result } });
     } catch (error) {
         next(error);
     }
