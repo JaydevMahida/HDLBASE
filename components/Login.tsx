@@ -14,6 +14,7 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState<UserRole>(UserRole.LEARNER);
+  const [roleModified, setRoleModified] = useState(false);
   const [loading, setLoading] = useState(false);
 
   // Real Google Login Integration
@@ -44,9 +45,15 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
       // If user exists, we might want to preserve their existing role/data instead of overwriting with default 'role' state
       if (userSnap.exists()) {
         const existingData = userSnap.data() as UserProfile;
-        // UPDATE: Allow role switching. Always use the currently selected role from UI.
-        profileData.role = role;
-        profileData.category = role === UserRole.CONTRIBUTOR ? 'HDL Designer' : 'Learner';
+        // UPDATE: Only overwrite role if user explicitly selected one
+        if (roleModified) {
+          profileData.role = role;
+          profileData.category = role === UserRole.CONTRIBUTOR ? 'HDL Designer' : 'Learner';
+        } else {
+          // Keep existing
+          profileData.role = existingData.role;
+          profileData.category = existingData.category || 'Learner';
+        }
       }
 
       await setDoc(userRef, profileData, { merge: true });
@@ -137,7 +144,7 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
               <div className="grid grid-cols-2 gap-3">
                 <button
                   type="button"
-                  onClick={() => setRole(UserRole.CONTRIBUTOR)}
+                  onClick={() => { setRole(UserRole.CONTRIBUTOR); setRoleModified(true); }}
                   className={`py-2 px-4 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${role === UserRole.CONTRIBUTOR
                     ? 'bg-contributor/20 border-contributor text-contributor'
                     : 'bg-gunmetal border-white/5 text-gray-600'
@@ -147,7 +154,7 @@ const Login: React.FC<Props> = ({ onLoginSuccess }) => {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setRole(UserRole.LEARNER)}
+                  onClick={() => { setRole(UserRole.LEARNER); setRoleModified(true); }}
                   className={`py-2 px-4 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${role === UserRole.LEARNER
                     ? 'bg-learner/20 border-learner text-learner'
                     : 'bg-gunmetal border-white/5 text-gray-600'
