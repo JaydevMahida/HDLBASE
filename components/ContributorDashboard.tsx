@@ -39,6 +39,7 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const [questionDifficulty, setQuestionDifficulty] = useState('Medium');
   const [options, setOptions] = useState<string[]>(['', '', '', '']);
   const [correctOption, setCorrectOption] = useState<number>(0);
+  const [moduleCode, setModuleCode] = useState('');
 
 
 
@@ -114,7 +115,7 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
       const payload = {
         name: formData.get('moduleName') as string,
         language: formData.get('language') as string,
-        code: formData.get('moduleCode') as string,
+        code: moduleCode,
         type: 'IP Core',
         description: 'Uploaded from Contributor Dashboard'
       };
@@ -142,6 +143,18 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
     } finally {
       setUploading(false);
     }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const text = event.target?.result as string;
+      setModuleCode(text);
+    };
+    reader.readAsText(file);
   };
 
   const openQuestionModal = (q: MockQuestion | null = null) => {
@@ -388,6 +401,25 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                     <option value="VHDL">VHDL</option>
                     <option value="SystemVerilog">SystemVerilog</option>
                   </select>
+
+                </div>
+
+                <div className="space-y-2">
+                  <div className="flex justify-between items-center">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">HDL Source Code</label>
+                    <label className="cursor-pointer text-[9px] font-black uppercase tracking-widest text-contributor hover:bg-contributor/10 px-2 py-1 rounded-md transition-all">
+                      <input type="file" accept=".v,.sv,.vhd,.txt" className="hidden" onChange={handleFileUpload} />
+                      📂 Import from Disk
+                    </label>
+                  </div>
+                  <textarea
+                    name="moduleCode"
+                    required
+                    value={moduleCode}
+                    onChange={(e) => setModuleCode(e.target.value)}
+                    className="w-full h-48 bg-matte border border-white/10 rounded-2xl px-6 py-4 text-offwhite focus:border-contributor outline-none transition-colors font-mono text-xs leading-relaxed resize-none"
+                    placeholder="Type code here or import from file..."
+                  />
                 </div>
                 <div className="flex gap-4 pt-6">
                   <button type="button" onClick={() => setShowUpload(false)} className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition-colors">Abort</button>
@@ -397,124 +429,130 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                 </div>
               </form>
             </div>
-          </div>
+          </div >
         )}
 
-        {showQuestionModal && (
-          <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-gunmetal w-full max-w-lg rounded-[48px] p-12 border border-white/10 shadow-2xl transform animate-in zoom-in duration-300">
-              <h3 className="text-3xl font-black tracking-tighter mb-8">{editingQuestionId ? 'Update Challenge' : 'New Assessment'}</h3>
-              <form onSubmit={handleSaveQuestion} className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Question Content</label>
-                  <textarea
-                    value={questionText}
-                    onChange={(e) => setQuestionText(e.target.value)}
-                    required
-                    className="w-full h-40 bg-matte border border-white/10 rounded-2xl px-6 py-4 text-offwhite focus:border-contributor outline-none transition-colors resize-none leading-relaxed font-medium"
-                    placeholder="Provide detailed hardware logic problem description..."
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Difficulty Calibration</label>
-                  <div className="grid grid-cols-3 gap-4">
-                    {['Entry', 'Medium', 'Senior'].map(lvl => (
-                      <button
-                        key={lvl}
-                        type="button"
-                        onClick={() => setQuestionDifficulty(lvl)}
-                        className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${questionDifficulty === lvl ? 'bg-contributor text-white border-contributor shadow-lg shadow-contributor/20' : 'bg-matte text-gray-600 border-white/5 hover:border-white/10'}`}
-                      >
-                        {lvl}
-                      </button>
-                    ))}
+        {
+          showQuestionModal && (
+            <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-gunmetal w-full max-w-lg rounded-[48px] p-12 border border-white/10 shadow-2xl transform animate-in zoom-in duration-300">
+                <h3 className="text-3xl font-black tracking-tighter mb-8">{editingQuestionId ? 'Update Challenge' : 'New Assessment'}</h3>
+                <form onSubmit={handleSaveQuestion} className="space-y-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Question Content</label>
+                    <textarea
+                      value={questionText}
+                      onChange={(e) => setQuestionText(e.target.value)}
+                      required
+                      className="w-full h-40 bg-matte border border-white/10 rounded-2xl px-6 py-4 text-offwhite focus:border-contributor outline-none transition-colors resize-none leading-relaxed font-medium"
+                      placeholder="Provide detailed hardware logic problem description..."
+                    />
                   </div>
-                </div>
-                <div className="flex gap-4 pt-6">
-                  <button
-                    type="button"
-                    onClick={() => setShowQuestionModal(false)}
-                    className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition-colors"
-                  >
-                    Discard
-                  </button>
-                  <button
-                    type="submit"
-                    className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-contributor text-white rounded-2xl shadow-xl shadow-contributor/20 hover:brightness-110 active:scale-95 transition-all"
-                  >
-                    {editingQuestionId ? 'Commit Changes' : 'Publish Challenge'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        )}
-
-        {deleteConfirmationId && (
-          <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <div className="bg-gunmetal w-full max-w-md rounded-[40px] p-10 border border-white/10 shadow-2xl transform animate-in zoom-in duration-300 text-center">
-              <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-              </div>
-              <h3 className="text-2xl font-black tracking-tight mb-2">Confirm Deletion</h3>
-              <p className="text-gray-400 font-medium mb-8">Are you sure you want to permanently remove this assessment item? This action cannot be undone.</p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setDeleteConfirmationId(null)}
-                  className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest bg-red-500 text-white rounded-xl shadow-xl shadow-red-500/20 hover:brightness-110 transition-all"
-                >
-                  Delete Forever
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-        {activeTab === 'profile' && (
-          <div className="animate-fade-in max-w-4xl mx-auto space-y-8 mt-8">
-            {stats ? (
-              <>
-                <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5 flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-bold text-gray-500 mb-1">CONTRIBUTOR PROFILE</div>
-                    <h2 className="text-3xl font-black text-white mb-2">{stats.username}</h2>
-                    <div className="flex gap-4">
-                      <span className="bg-contributor/10 text-contributor px-3 py-1 rounded-full text-xs font-bold border border-contributor/20">
-                        ROLE: CONTRIBUTOR
-                      </span>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Difficulty Calibration</label>
+                    <div className="grid grid-cols-3 gap-4">
+                      {['Entry', 'Medium', 'Senior'].map(lvl => (
+                        <button
+                          key={lvl}
+                          type="button"
+                          onClick={() => setQuestionDifficulty(lvl)}
+                          className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${questionDifficulty === lvl ? 'bg-contributor text-white border-contributor shadow-lg shadow-contributor/20' : 'bg-matte text-gray-600 border-white/5 hover:border-white/10'}`}
+                        >
+                          {lvl}
+                        </button>
+                      ))}
                     </div>
                   </div>
-                  <div className="h-20 w-20 bg-gradient-to-br from-contributor to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-contributor/20">
-                    <span className="text-3xl">👨‍💻</span>
+                  <div className="flex gap-4 pt-6">
+                    <button
+                      type="button"
+                      onClick={() => setShowQuestionModal(false)}
+                      className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition-colors"
+                    >
+                      Discard
+                    </button>
+                    <button
+                      type="submit"
+                      className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-contributor text-white rounded-2xl shadow-xl shadow-contributor/20 hover:brightness-110 active:scale-95 transition-all"
+                    >
+                      {editingQuestionId ? 'Commit Changes' : 'Publish Challenge'}
+                    </button>
                   </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-8">
-                  <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-contributor/30 transition-colors">
-                    <div className="text-5xl font-black text-white mb-2">{stats.modules || 0}</div>
-                    <div className="text-gray-400 font-bold uppercase tracking-widest text-sm">Modules Uploaded</div>
-                  </div>
-                  <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-contributor/30 transition-colors">
-                    <div className="text-5xl font-black text-white mb-2">{stats.quizzes || 0}</div>
-                    <div className="text-gray-400 font-bold uppercase tracking-widest text-sm">Quizzes Created</div>
-                  </div>
-                </div>
-              </>
-            ) : (
-              <div className="text-center py-20">
-                <div className="text-gray-500 mb-4">Loading stats...</div>
-                <div className="text-xs text-gray-600">If this takes too long, ensure Backend is running.</div>
+                </form>
               </div>
-            )}
-          </div>
-        )}
-      </main>
-    </div>
+            </div>
+          )
+        }
+
+        {
+          deleteConfirmationId && (
+            <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+              <div className="bg-gunmetal w-full max-w-md rounded-[40px] p-10 border border-white/10 shadow-2xl transform animate-in zoom-in duration-300 text-center">
+                <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                </div>
+                <h3 className="text-2xl font-black tracking-tight mb-2">Confirm Deletion</h3>
+                <p className="text-gray-400 font-medium mb-8">Are you sure you want to permanently remove this assessment item? This action cannot be undone.</p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setDeleteConfirmationId(null)}
+                    className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest bg-red-500 text-white rounded-xl shadow-xl shadow-red-500/20 hover:brightness-110 transition-all"
+                  >
+                    Delete Forever
+                  </button>
+                </div>
+              </div>
+            </div>
+          )
+        }
+        {
+          activeTab === 'profile' && (
+            <div className="animate-fade-in max-w-4xl mx-auto space-y-8 mt-8">
+              {stats ? (
+                <>
+                  <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5 flex items-center justify-between">
+                    <div>
+                      <div className="text-sm font-bold text-gray-500 mb-1">CONTRIBUTOR PROFILE</div>
+                      <h2 className="text-3xl font-black text-white mb-2">{stats.username}</h2>
+                      <div className="flex gap-4">
+                        <span className="bg-contributor/10 text-contributor px-3 py-1 rounded-full text-xs font-bold border border-contributor/20">
+                          ROLE: CONTRIBUTOR
+                        </span>
+                      </div>
+                    </div>
+                    <div className="h-20 w-20 bg-gradient-to-br from-contributor to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-contributor/20">
+                      <span className="text-3xl">👨‍💻</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-8">
+                    <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-contributor/30 transition-colors">
+                      <div className="text-5xl font-black text-white mb-2">{stats.modules || 0}</div>
+                      <div className="text-gray-400 font-bold uppercase tracking-widest text-sm">Modules Uploaded</div>
+                    </div>
+                    <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-contributor/30 transition-colors">
+                      <div className="text-5xl font-black text-white mb-2">{stats.quizzes || 0}</div>
+                      <div className="text-gray-400 font-bold uppercase tracking-widest text-sm">Quizzes Created</div>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-20">
+                  <div className="text-gray-500 mb-4">Loading stats...</div>
+                  <div className="text-xs text-gray-600">If this takes too long, ensure Backend is running.</div>
+                </div>
+              )}
+            </div>
+          )
+        }
+      </main >
+    </div >
   );
 };
 
