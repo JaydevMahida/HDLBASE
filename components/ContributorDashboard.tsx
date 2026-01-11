@@ -267,11 +267,15 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
         setQuizTitle('');
         setNewQuizQuestions([]);
         fetchData();
+        alert("Quiz published successfully!");
       } else {
-        alert("Failed to publish quiz");
+        const errorData = await response.json();
+        console.error("Publish Error:", errorData);
+        alert(`Failed to publish quiz: ${errorData.message || 'Unknown server error'}`);
       }
-    } catch (e) {
-      console.error(e);
+    } catch (e: any) {
+      console.error("Network/Client Error:", e);
+      alert(`Failed to publish quiz: ${e.message}`);
     } finally {
       setUploading(false);
     }
