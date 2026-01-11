@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '../types';
 import logo from '../Assets/hdlbasewhitefinal-removebg-preview.png';
@@ -271,6 +271,24 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
     }
   };
 
+  // File Upload Handlers
+  const designFileInputRef = useRef<HTMLInputElement>(null);
+  const testbenchFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>, setFunction: React.Dispatch<React.SetStateAction<string>>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const content = e.target?.result as string;
+      setFunction(content);
+    };
+    reader.readAsText(file);
+    // Reset input so same file can be selected again
+    event.target.value = '';
+  };
+
   return (
     <div className="min-h-screen bg-matte text-offwhite flex flex-col">
       <nav className="border-b border-white/5 bg-gunmetal/30 p-4 sticky top-0 backdrop-blur-md z-20">
@@ -431,8 +449,22 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
               <div className="flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[400px]">
                 {/* Design Editor */}
                 <div className="flex flex-col gap-2">
+                  <input
+                    type="file"
+                    accept=".v,.sv,.txt"
+                    className="hidden"
+                    ref={designFileInputRef}
+                    onChange={(e) => handleFileUpload(e, setCode)}
+                  />
                   <div className="flex justify-between items-center px-2">
                     <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">design.sv</span>
+                    <button
+                      onClick={() => designFileInputRef.current?.click()}
+                      className="text-[10px] font-bold text-learner hover:text-white uppercase tracking-widest transition-colors flex items-center gap-1"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                      Upload
+                    </button>
                   </div>
                   <textarea
                     className="w-full h-full bg-gunmetal border border-white/10 rounded-[20px] p-6 font-mono text-sm text-accent/80 focus:border-learner outline-none transition-all resize-none shadow-inner leading-relaxed overflow-auto"
@@ -445,8 +477,22 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
 
                 {/* Testbench Editor */}
                 <div className="flex flex-col gap-2">
+                  <input
+                    type="file"
+                    accept=".v,.sv,.txt"
+                    className="hidden"
+                    ref={testbenchFileInputRef}
+                    onChange={(e) => handleFileUpload(e, setTestbenchCode)}
+                  />
                   <div className="flex justify-between items-center px-2">
                     <span className="text-[10px] font-black uppercase tracking-widest text-gray-500">testbench.sv</span>
+                    <button
+                      onClick={() => testbenchFileInputRef.current?.click()}
+                      className="text-[10px] font-bold text-learner hover:text-white uppercase tracking-widest transition-colors flex items-center gap-1"
+                    >
+                      <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                      Upload
+                    </button>
                   </div>
                   <textarea
                     className="w-full h-full bg-gunmetal border border-white/10 rounded-[20px] p-6 font-mono text-sm text-accent/80 focus:border-learner outline-none transition-all resize-none shadow-inner leading-relaxed overflow-auto"
