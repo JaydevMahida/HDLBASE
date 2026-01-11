@@ -271,11 +271,11 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
       } else {
         const errorData = await response.json();
         console.error("Publish Error:", errorData);
-        alert(`Failed to publish quiz: ${errorData.message || 'Unknown server error'}`);
+        alert(`Failed to publish quiz (Status: ${response.status}): ${errorData.message || 'Unknown server error'}`);
       }
     } catch (e: any) {
       console.error("Network/Client Error:", e);
-      alert(`Failed to publish quiz: ${e.message}`);
+      alert(`Failed to publish quiz (Client Error): ${e.message}`);
     } finally {
       setUploading(false);
     }
