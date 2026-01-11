@@ -27,6 +27,10 @@ interface UserStats {
 const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'modules' | 'quiz' | 'playground' | 'progress'>('modules');
+
+  // Quiz State
+  const [quizzes, setQuizzes] = useState<any[]>([]);
+  const [activeQuiz, setActiveQuiz] = useState<any>(null); // The quiz currently being taken
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [score, setScore] = useState(0);
@@ -73,22 +77,20 @@ endmodule`);
         // Fetch Quizzes (for Assessment)
         const quizzesRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/quizzes`, { headers });
         const quizzesData = await quizzesRes.json();
-        if (quizzesData.status === 'success' && quizzesData.data.length > 0) {
-          setQuestions(quizzesData.data.map((q: any) => ({
-            id: q.id,
-            text: q.text,
-            options: q.options || ['A', 'B', 'C', 'D'],
-            correct: q.correct || 0
-          })));
+        if (quizzesData.status === 'success') {
+          setQuizzes(quizzesData.data);
+          // Don't auto-set questions. Let user pick a quiz.
         } else {
-          // Fallback if DB is empty so UI isn't broken
-          const mockQuestions: Question[] = [
-            { id: '1', text: 'Which keyword is used to define a module in Verilog?', options: ['component', 'module', 'unit', 'entity'], correct: 1 },
-            { id: '2', text: 'In VHDL, what part defined external interfaces?', options: ['Architecture', 'Process', 'Entity', 'Package'], correct: 2 },
-            { id: '3', text: 'Non-blocking assignment symbol?', options: ['=', ':=', '<=', '=>'], correct: 2 },
-            { id: '4', text: 'What is RTL?', options: ['Register Transfer Level', 'Real Time Logic', 'Ready To Load', 'Runtime Logic'], correct: 0 }
-          ];
-          setQuestions(mockQuestions);
+          // Fallback
+          setQuizzes([{
+            id: 'mock',
+            title: 'Mock Quiz',
+            description: 'Sample quiz because DB is empty',
+            questions: [
+              { id: '1', text: 'Which keyword is used to define a module in Verilog?', options: ['component', 'module', 'unit', 'entity'], correct: 1 },
+              { id: '2', text: 'In VHDL, what part defined external interfaces?', options: ['Architecture', 'Process', 'Entity', 'Package'], correct: 2 }
+            ]
+          }]);
         }
       } catch (err) {
         console.error('Failed to fetch learner data', err);
@@ -99,6 +101,14 @@ endmodule`);
 
   const handleLogoClick = () => {
     navigate('/dashboard');
+  };
+
+  const startQuiz = (quiz: any) => {
+    setActiveQuiz(quiz);
+    setQuestions(quiz.questions || []);
+    setCurrentQuestionIndex(0);
+    setScore(0);
+    setQuizFinished(false);
   };
 
   const handleAnswer = async (index: number) => {
@@ -128,7 +138,7 @@ endmodule`);
             body: JSON.stringify({
               score: newScore,
               total: questions.length,
-              details: 'Quiz completed'
+              details: `Quiz: ${activeQuiz?.title || 'Unknown'}`
             })
           });
 
@@ -160,8 +170,7 @@ endmodule`);
   };
 
   const resetQuiz = () => {
-    setCurrentQuestionIndex(0);
-    setScore(0);
+    setActiveQuiz(null); // Go back to list
     setQuizFinished(false);
   };
 
@@ -266,37 +275,75 @@ endmodule`);
         )}
 
         {activeTab === 'quiz' && (
-          <section className="max-w-2xl mx-auto">
-            {quizFinished ? (
-              <div className="bg-gunmetal p-16 rounded-[48px] border border-white/10 text-center shadow-2xl">
-                <div className="w-20 h-20 bg-learner/10 text-learner rounded-3xl flex items-center justify-center mx-auto mb-8">
-                  <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+          <section className="max-w-7xl mx-auto">
+            {!activeQuiz ? (
+              // QUIZ LIST VIEW
+              <div>
+                <div className="mb-12">
+                  <h2 className="text-4xl font-black tracking-tight">Available Quizzes</h2>
+                  <p className="text-gray-400 font-medium">Verify your skills with community-curated assessments.</p>
                 </div>
-                <h3 className="text-3xl font-black tracking-tighter mb-2">Final Report</h3>
-                <p className="text-gray-400 mb-10 text-xl font-medium">Score: <span className="text-learner font-black">{score}</span> / {questions.length}</p>
-                <button onClick={resetQuiz} className="bg-learner text-white px-12 py-4 rounded-2xl font-black text-lg hover:scale-105 active:scale-95 transition-all">Re-Verify Skills</button>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {quizzes.map(quiz => (
+                    <div key={quiz.id} onClick={() => startQuiz(quiz)} className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-learner/50 hover:bg-white/5 transition-all cursor-pointer group">
+                      <div className="text-[10px] text-gray-500 mb-4 font-black uppercase tracking-widest">{quiz.questions?.length || 0} Questions</div>
+                      <h3 className="text-2xl font-bold mb-4 group-hover:text-learner transition-colors">{quiz.title}</h3>
+                      <p className="text-sm text-gray-400 mb-8 line-clamp-2">{quiz.description}</p>
+                      <div className="flex justify-between items-center">
+                        <span className="text-[10px] bg-white/5 px-3 py-1 rounded-lg uppercase tracking-widest font-bold text-gray-400">Intermediate</span>
+                        <button className="text-[10px] font-black uppercase tracking-widest bg-learner text-white px-6 py-3 rounded-xl shadow-lg shadow-learner/20 hover:scale-105 transition-all">Start Quiz</button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="bg-gunmetal rounded-[48px] border border-white/10 overflow-hidden shadow-2xl">
-                <div className="p-12">
-                  <div className="flex justify-between items-center mb-10">
-                    <span className="text-[10px] font-black text-learner uppercase tracking-widest">Section {currentQuestionIndex + 1}</span>
-                    <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">{Math.round(((currentQuestionIndex) / questions.length) * 100)}% Done</span>
+              // TAKING ACTIVE QUIZ
+              <div className="max-w-2xl mx-auto">
+                {quizFinished ? (
+                  <div className="bg-gunmetal p-16 rounded-[48px] border border-white/10 text-center shadow-2xl animate-fade-in">
+                    <div className="w-20 h-20 bg-learner/10 text-learner rounded-3xl flex items-center justify-center mx-auto mb-8">
+                      <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" /></svg>
+                    </div>
+                    <h3 className="text-3xl font-black tracking-tighter mb-2">Assessment Complete</h3>
+                    <p className="text-gray-400 mb-10 text-xl font-medium">You scored <span className="text-learner font-black">{score}</span> out of {questions.length}</p>
+
+                    <div className="flex gap-4 justify-center">
+                      <button onClick={() => { setCurrentQuestionIndex(0); setScore(0); setQuizFinished(false); }} className="px-8 py-3 rounded-2xl font-bold text-sm border border-white/10 hover:bg-white/5 transition-all">Retry</button>
+                      <button onClick={resetQuiz} className="bg-learner text-white px-8 py-3 rounded-2xl font-black text-sm shadow-xl shadow-learner/20 hover:scale-105 transition-all">Back to Quizzes</button>
+                    </div>
                   </div>
-                  <h3 className="text-2xl font-black mb-12 leading-snug">{questions[currentQuestionIndex]?.text}</h3>
-                  <div className="space-y-4">
-                    {questions[currentQuestionIndex]?.options.map((opt, i) => (
-                      <button
-                        key={i}
-                        onClick={() => handleAnswer(i)}
-                        className="w-full text-left p-6 rounded-2xl bg-matte border border-white/5 hover:border-learner/50 hover:bg-white/5 transition-all flex items-center gap-6 group"
-                      >
-                        <span className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center font-black text-gray-600 group-hover:text-learner transition-colors">{String.fromCharCode(65 + i)}</span>
-                        <span className="font-bold text-gray-300 group-hover:text-white transition-colors">{opt}</span>
-                      </button>
-                    ))}
+                ) : (
+                  <div className="bg-gunmetal rounded-[48px] border border-white/10 overflow-hidden shadow-2xl animate-fade-in">
+                    <div className="p-12">
+                      <div className="flex justify-between items-center mb-10">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black text-learner uppercase tracking-widest mb-1">{activeQuiz.title}</span>
+                          <span className="text-2xl font-black text-white">Question {currentQuestionIndex + 1}</span>
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest block mb-1">Progress</span>
+                          <div className="w-24 h-1 bg-white/10 rounded-full overflow-hidden">
+                            <div className="h-full bg-learner transition-all duration-500" style={{ width: `${((currentQuestionIndex) / questions.length) * 100}%` }}></div>
+                          </div>
+                        </div>
+                      </div>
+                      <h3 className="text-xl font-medium mb-12 leading-relaxed text-gray-200">{questions[currentQuestionIndex]?.text}</h3>
+                      <div className="space-y-4">
+                        {questions[currentQuestionIndex]?.options.map((opt, i) => (
+                          <button
+                            key={i}
+                            onClick={() => handleAnswer(i)}
+                            className="w-full text-left p-6 rounded-2xl bg-matte border border-white/5 hover:border-learner/50 hover:bg-white/5 transition-all flex items-center gap-6 group active:scale-[0.98]"
+                          >
+                            <span className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center font-black text-gray-600 group-hover:text-learner group-hover:bg-learner/10 transition-colors">{String.fromCharCode(65 + i)}</span>
+                            <span className="font-bold text-gray-400 group-hover:text-white transition-colors">{opt}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             )}
           </section>

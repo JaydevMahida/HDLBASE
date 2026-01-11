@@ -21,15 +21,26 @@ export const createQuiz = async (req: Request, res: Response, next: NextFunction
         const db = getDb();
         if (!db) return res.status(201).json({ status: 'success', message: 'Mock Mode' });
 
-        const { text, options, correct, difficulty } = req.body;
+        const { title, description, questions } = req.body;
+
+        // Validation
+        if (!title || !Array.isArray(questions) || questions.length === 0) {
+            return res.status(400).json({ status: 'error', message: 'Invalid quiz data. Title and at least one question required.' });
+        }
 
         const newQuiz = {
-            text,
-            options, // Array of strings
-            correct: Number(correct), // Index
-            difficulty: difficulty || 'Medium',
+            title,
+            description: description || '',
+            questions: questions.map((q: any) => ({
+                text: q.text,
+                options: q.options,
+                correct: Number(q.correct),
+                difficulty: q.difficulty || 'Medium'
+            })),
+            difficulty: 'Mixed', // You could calculate average difficulty
             createdAt: new Date().toISOString(),
-            authorId: req.user?.uid || 'anonymous'
+            authorId: req.user?.uid || 'anonymous',
+            authorName: req.user?.name || 'Contributor'
         };
 
         const docRef = await db.collection('quizzes').add(newQuiz);

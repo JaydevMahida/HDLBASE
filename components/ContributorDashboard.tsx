@@ -197,41 +197,83 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const handleSaveQuestion = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Simplification: We only support CREATE for now in this DB integration logic iteration
-    if (editingQuestionId) {
-      alert('Edit not supported in this version - please delete and recreate');
+    // BULK CREATE LOGIC
+    try {
+      if (questions.length === 0) {
+        alert("Please add at least one question!");
+        return;
+      }
+
+      const session = localStorage.getItem('hdlbase_mock_session');
+      const sessionData = JSON.parse(session);
+      const token = sessionData.token || sessionData.uid;
+
+      const payload = {
+        title: quizTitle,
+        description: 'Created via Contributor Dashboard',
+        questions: questions.map(q => ({
+          text: q.text,
+          options: ['A', 'B', 'C', 'D'], // Placeholder for now, or add UI for options
+          correct: 0, // Placeholder
+          difficulty: q.difficulty
+        }))
+        // WAIT: The UI below (createQuestion) adds to local 'questions' state.
+        // But 'questions' state is currently used for DISPLAYING fetched quizzes. 
+        // I need a SEPARATE state for "New Quiz Questions".
+      };
+
+      // Let's refactor specifically for the new "Bulk" flow.
+      // We need new state variables.
+    } catch (err) {
+      console.error('Save failed', err);
+    }
+  };
+
+  // --- NEW BULK QUIZ LOGIC ---
+  const [quizTitle, setQuizTitle] = useState('');
+  const [newQuizQuestions, setNewQuizQuestions] = useState<any[]>([]);
+  const [currentNewQuestion, setCurrentNewQuestion] = useState({ text: '', difficulty: 'Medium', correct: 0, options: ['', '', '', ''] });
+
+  const addQuestionToBatch = () => {
+    setNewQuizQuestions([...newQuizQuestions, { ...currentNewQuestion, id: Date.now().toString() }]);
+    setCurrentNewQuestion({ text: '', difficulty: 'Medium', correct: 0, options: ['', '', '', ''] });
+  };
+
+  const publishQuiz = async () => {
+    if (!quizTitle || newQuizQuestions.length === 0) {
+      alert("Title and at least one question required.");
       return;
     }
-
+    setUploading(true);
     try {
       const session = localStorage.getItem('hdlbase_mock_session');
       const sessionData = JSON.parse(session);
       const token = sessionData.token || sessionData.uid;
 
       const payload = {
-        text: questionText,
-        difficulty: questionDifficulty,
-        options: options,
-        correct: correctOption
+        title: quizTitle,
+        description: 'Custom Quiz',
+        questions: newQuizQuestions
       };
 
       const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/quizzes`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify(payload)
       });
 
       if (response.ok) {
-        await fetchData(); // Reload
         setShowQuestionModal(false);
-        setQuestionText('');
-        setQuestionDifficulty('Medium');
+        setQuizTitle('');
+        setNewQuizQuestions([]);
+        fetchData();
+      } else {
+        alert("Failed to publish quiz");
       }
-    } catch (err) {
-      console.error('Save question failed', err);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -469,33 +511,68 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
             <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
               <div className="bg-gunmetal w-full max-w-lg rounded-[48px] p-12 border border-white/10 shadow-2xl transform animate-in zoom-in duration-300">
                 <h3 className="text-3xl font-black tracking-tighter mb-8">{editingQuestionId ? 'Update Challenge' : 'New Assessment'}</h3>
-                <form onSubmit={handleSaveQuestion} className="space-y-6">
+                <h3 className="text-3xl font-black tracking-tighter mb-8">Quiz Builder</h3>
+                <div className="space-y-6 overflow-y-auto max-h-[70vh] custom-scrollbar pr-2">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Question Content</label>
-                    <textarea
-                      value={questionText}
-                      onChange={(e) => setQuestionText(e.target.value)}
-                      required
-                      className="w-full h-40 bg-matte border border-white/10 rounded-2xl px-6 py-4 text-offwhite focus:border-contributor outline-none transition-colors resize-none leading-relaxed font-medium"
-                      placeholder="Provide detailed hardware logic problem description..."
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Quiz Title</label>
+                    <input
+                      value={quizTitle}
+                      onChange={(e) => setQuizTitle(e.target.value)}
+                      className="w-full bg-matte border border-white/10 rounded-2xl px-6 py-4 text-offwhite focus:border-contributor outline-none transition-colors font-bold text-lg"
+                      placeholder="e.g. Verilog Finite State Machines"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Difficulty Calibration</label>
-                    <div className="grid grid-cols-3 gap-4">
-                      {['Entry', 'Medium', 'Senior'].map(lvl => (
-                        <button
-                          key={lvl}
-                          type="button"
-                          onClick={() => setQuestionDifficulty(lvl)}
-                          className={`py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest border transition-all ${questionDifficulty === lvl ? 'bg-contributor text-white border-contributor shadow-lg shadow-contributor/20' : 'bg-matte text-gray-600 border-white/5 hover:border-white/10'}`}
-                        >
-                          {lvl}
+
+                  {/* Question List Preview */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Questions Added ({newQuizQuestions.length})</label>
+                    {newQuizQuestions.map((q, idx) => (
+                      <div key={idx} className="bg-matte/50 p-4 rounded-xl border border-white/5 flex justify-between items-center group">
+                        <div>
+                          <div className="text-xs font-bold text-white mb-1">Q{idx + 1}. {q.text.substring(0, 40)}{q.text.length > 40 && '...'}</div>
+                          <div className="text-[9px] uppercase tracking-widest text-gray-500">{q.difficulty}</div>
+                        </div>
+                        <button onClick={() => setNewQuizQuestions(newQuizQuestions.filter((_, i) => i !== idx))} className="text-red-500 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
                         </button>
-                      ))}
+                      </div>
+                    ))}
+                    {newQuizQuestions.length === 0 && <div className="text-xs text-gray-600 italic text-center py-4 border border-dashed border-white/5 rounded-xl">No questions added yet.</div>}
+                  </div>
+
+                  <div className="border-t border-white/10 pt-6">
+                    <h4 className="text-xs font-black uppercase tracking-widest text-contributor mb-4">Add New Question</h4>
+                    <div className="space-y-4">
+                      <textarea
+                        value={currentNewQuestion.text}
+                        onChange={(e) => setCurrentNewQuestion({ ...currentNewQuestion, text: e.target.value })}
+                        className="w-full h-24 bg-matte border border-white/10 rounded-2xl px-4 py-3 text-offwhite focus:border-contributor outline-none transition-colors resize-none text-xs"
+                        placeholder="Question text..."
+                      />
+                      <div className="flex gap-2">
+                        {['Entry', 'Medium', 'Senior'].map(lvl => (
+                          <button
+                            key={lvl}
+                            type="button"
+                            onClick={() => setCurrentNewQuestion({ ...currentNewQuestion, difficulty: lvl })}
+                            className={`flex-1 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${currentNewQuestion.difficulty === lvl ? 'bg-contributor text-white border-contributor' : 'bg-matte text-gray-600 border-white/5'}`}
+                          >
+                            {lvl}
+                          </button>
+                        ))}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={addQuestionToBatch}
+                        disabled={!currentNewQuestion.text}
+                        className="w-full py-3 text-[10px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all disabled:opacity-50"
+                      >
+                        + Add Question to Quiz
+                      </button>
                     </div>
                   </div>
-                  <div className="flex gap-4 pt-6">
+
+                  <div className="flex gap-4 pt-6 border-t border-white/10">
                     <button
                       type="button"
                       onClick={() => setShowQuestionModal(false)}
@@ -504,13 +581,14 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                       Discard
                     </button>
                     <button
-                      type="submit"
+                      type="button"
+                      onClick={publishQuiz}
                       className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-contributor text-white rounded-2xl shadow-xl shadow-contributor/20 hover:brightness-110 active:scale-95 transition-all"
                     >
-                      {editingQuestionId ? 'Commit Changes' : 'Publish Challenge'}
+                      {uploading ? 'Publishing...' : 'Publish Full Quiz'}
                     </button>
                   </div>
-                </form>
+                </div>
               </div>
             </div>
           )
