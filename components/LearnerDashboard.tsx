@@ -140,7 +140,7 @@ endmodule`);
           const sessionData = JSON.parse(session);
           const token = sessionData.token || sessionData.uid;
 
-          await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/quizzes/results`, {
+          const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/quizzes/results`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -153,6 +153,12 @@ endmodule`);
               quizId: activeQuiz?.id || null
             })
           });
+
+          if (!response.ok) {
+            const err = await response.json();
+            console.warn("Result submission warning:", err);
+            // If it's the 403 "Already completed", just swallow it or notify.
+          }
 
           // Refresh stats
 
@@ -324,7 +330,10 @@ endmodule`);
                       <div className="flex justify-between items-center">
                         <span className="text-[10px] bg-white/5 px-3 py-1 rounded-lg uppercase tracking-widest font-bold text-gray-400">Intermediate</span>
                         {completedQuizIds.has(quiz.id) ? (
-                          <span className="text-[10px] font-black uppercase tracking-widest bg-green-500/10 text-green-500 px-6 py-3 rounded-xl border border-green-500/20">Completed ✅</span>
+                          <div className="flex gap-2">
+                            <span className="text-[10px] font-black uppercase tracking-widest bg-green-500/10 text-green-500 px-3 py-3 rounded-xl border border-green-500/20">Done ✅</span>
+                            <button className="text-[10px] font-black uppercase tracking-widest bg-white/5 text-gray-400 px-4 py-3 rounded-xl hover:bg-white/10 transition-all">Retry</button>
+                          </div>
                         ) : (
                           <button className="text-[10px] font-black uppercase tracking-widest bg-learner text-white px-6 py-3 rounded-xl shadow-lg shadow-learner/20 hover:scale-105 transition-all">Start Quiz</button>
                         )}

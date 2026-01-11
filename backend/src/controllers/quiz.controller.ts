@@ -73,6 +73,18 @@ export const submitResult = async (req: Request, res: Response, next: NextFuncti
             timestamp: new Date().toISOString()
         };
 
+        // Check if user already submitted this quiz
+        if (quizId) {
+            const existingSnapshot = await db.collection('results')
+                .where('userId', '==', req.user?.uid)
+                .where('quizId', '==', quizId)
+                .get();
+
+            if (!existingSnapshot.empty) {
+                return res.status(403).json({ status: 'error', message: 'You have already completed this quiz.' });
+            }
+        }
+
         const batch = db.batch();
 
         // 1. Save Result
@@ -131,6 +143,25 @@ export const getQuizResults = async (req: Request, res: Response, next: NextFunc
 
         console.log(`[QuizResults] Fetched ${results.length} results for quiz ${id}`);
 
+        res.status(200).json({ status: 'success', data: results });
+    } catch (error) {
+        next(error);
+    }
+};
+
+export const getMyResults = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const db = getDb();
+        if (!db) return res.status(200).json({ status: 'success', data: [], message: 'Mock Mode' });
+
+        const userId = req.user?.uid;
+        if (!userId) return res.status(400).json({ status: 'error', message: 'User ID required' });
+
+        const snapshot = await db.collection('results')
+            .where('userId', '==', userId)
+            .get();
+
+        const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.status(200).json({ status: 'success', data: results });
     } catch (error) {
         next(error);

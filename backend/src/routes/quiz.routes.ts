@@ -15,6 +15,9 @@ router.route('/')
 // Submit Result
 router.post('/results', quizController.submitResult);
 
+// Get My Results (Learner)
+router.get('/my-results', quizController.getMyResults);
+
 // Get Results for a specific quiz (Contributor only?)
 router.get('/:id/results', restrictTo(UserRole.CONTRIBUTOR, UserRole.ADMIN), quizController.getQuizResults);
 
