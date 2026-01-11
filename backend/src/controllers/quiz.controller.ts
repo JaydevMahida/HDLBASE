@@ -46,8 +46,12 @@ export const createQuiz = async (req: Request, res: Response, next: NextFunction
         const docRef = await db.collection('quizzes').add(newQuiz);
 
         res.status(201).json({ status: 'success', data: { id: docRef.id, ...newQuiz } });
-    } catch (error) {
-        next(error);
+    } catch (error: any) {
+        console.error("Create Quiz Error:", error);
+        res.status(500).json({
+            status: 'error',
+            message: `Save Failed: ${error.message}`
+        });
     }
 };
 
