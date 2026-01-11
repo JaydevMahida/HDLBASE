@@ -20,6 +20,8 @@ interface MockFile {
 interface MockQuestion {
   id: string;
   text: string;
+  title?: string;
+  submissionCount?: number;
   difficulty: string;
   date: string;
 }
@@ -46,6 +48,11 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
 
 
   const [deleteConfirmationId, setDeleteConfirmationId] = useState<string | null>(null);
+
+  // Stats / Submissions View
+  const [showSubmissionsModal, setShowSubmissionsModal] = useState(false);
+  const [currentSubmissions, setCurrentSubmissions] = useState<any[]>([]);
+  const [loadingSubmissions, setLoadingSubmissions] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -84,6 +91,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
         setQuestions(quizzesData.data.map((q: any) => ({
           id: q.id,
           text: q.text,
+          title: q.title || 'Untitled Quiz',
+          submissionCount: q.submissionCount || 0,
           difficulty: q.difficulty,
           date: q.createdAt ? new Date(q.createdAt).toLocaleDateString() : 'Recent'
         })));
@@ -282,6 +291,30 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
     }
   };
 
+  const fetchSubmissions = async (quizId: string) => {
+    setLoadingSubmissions(true);
+    setShowSubmissionsModal(true);
+    setCurrentSubmissions([]);
+
+    try {
+      const session = localStorage.getItem('hdlbase_mock_session');
+      const sessionData = JSON.parse(session);
+      const token = sessionData.token || sessionData.uid;
+
+      const res = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/quizzes/${quizId}/results`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.status === 'success') {
+        setCurrentSubmissions(data.data);
+      }
+    } catch (err) {
+      console.error("Failed to fetch submissions", err);
+    } finally {
+      setLoadingSubmissions(false);
+    }
+  };
+
   const handleDeleteQuestion = (id: string) => {
     setDeleteConfirmationId(id);
   };
@@ -399,7 +432,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                 <thead className="bg-white/5 uppercase text-[10px] font-black tracking-widest text-gray-500">
                   <tr>
                     <th className="px-8 py-6">ID</th>
-                    <th className="px-8 py-6">Preview</th>
+                    <th className="px-8 py-6">Title</th>
+                    <th className="px-8 py-6">Attempts</th>
                     <th className="px-8 py-6">Difficulty</th>
                     <th className="px-8 py-6">Created</th>
                     <th className="px-8 py-6 text-right">Actions</th>
@@ -408,8 +442,14 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                 <tbody className="divide-y divide-white/5">
                   {questions.map(q => (
                     <tr key={q.id} className="hover:bg-white/2 transition-colors">
-                      <td className="px-8 py-6 font-mono text-gray-600">{q.id}</td>
-                      <td className="px-8 py-6 font-bold">{q.text}</td>
+                      <td className="px-8 py-6 font-mono text-gray-600">{q.id.slice(0, 8)}...</td>
+                      <td className="px-8 py-6 font-bold">{q.title || q.text.slice(0, 30)}</td>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-2">
+                          <span className="font-black text-white">{q.submissionCount}</span>
+                          <button onClick={() => fetchSubmissions(q.id)} className="text-[9px] uppercase font-bold text-contributor hover:underline">View</button>
+                        </div>
+                      </td>
                       <td className="px-8 py-6">
                         <span className="px-3 py-1 rounded-full bg-orange-500/10 text-orange-500 text-[10px] font-black uppercase tracking-widest border border-orange-500/20">{q.difficulty}</span>
                       </td>
@@ -626,32 +666,82 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
           )
         }
 
-        {
-          deleteConfirmationId && (
-            <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-              <div className="bg-gunmetal w-full max-w-md rounded-[40px] p-10 border border-white/10 shadow-2xl transform animate-in zoom-in duration-300 text-center">
-                <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
-                  <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                </div>
-                <h3 className="text-2xl font-black tracking-tight mb-2">Confirm Deletion</h3>
-                <p className="text-gray-400 font-medium mb-8">Are you sure you want to permanently remove this assessment item? This action cannot be undone.</p>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => setDeleteConfirmationId(null)}
-                    className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={confirmDelete}
-                    className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest bg-red-500 text-white rounded-xl shadow-xl shadow-red-500/20 hover:brightness-110 transition-all"
-                  >
-                    Delete Forever
-                  </button>
-                </div>
+        {showSubmissionsModal && (
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-gunmetal w-full max-w-2xl rounded-[32px] p-8 border border-white/10 shadow-2xl h-[80vh] flex flex-col">
+              <div className="flex justify-between items-center mb-6">
+                <h3 className="text-2xl font-black tracking-tight">Quiz Submissions</h3>
+                <button onClick={() => setShowSubmissionsModal(false)} className="bg-white/5 p-2 rounded-full hover:bg-white/10 transition-colors">
+                  <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
+
+              <div className="flex-grow overflow-auto">
+                {loadingSubmissions ? (
+                  <div className="text-center py-20 text-gray-500 font-bold animate-pulse">Loading data...</div>
+                ) : (
+                  <table className="w-full text-left text-sm">
+                    <thead className="bg-white/5 uppercase text-[10px] font-black tracking-widest text-gray-500 sticky top-0">
+                      <tr>
+                        <th className="px-6 py-4">Student</th>
+                        <th className="px-6 py-4">Score</th>
+                        <th className="px-6 py-4 text-right">Date</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {currentSubmissions.length > 0 ? currentSubmissions.map((sub, i) => (
+                        <tr key={i} className="hover:bg-white/2">
+                          <td className="px-6 py-4 font-bold text-white">{sub.userName || 'Anonymous'}</td>
+                          <td className="px-6 py-4">
+                            <span className={`px-2 py-1 rounded-md text-[10px] font-black uppercase ${sub.score === sub.total ? 'bg-green-500/20 text-green-500' : 'bg-white/5 text-gray-400'}`}>
+                              {sub.score} / {sub.total}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 text-gray-500 font-mono text-xs text-right">
+                            {new Date(sub.timestamp).toLocaleString()}
+                          </td>
+                        </tr>
+                      )) : (
+                        <tr>
+                          <td colSpan={3} className="px-6 py-12 text-center text-gray-600 font-bold uppercase tracking-widest text-xs">
+                            No submissions yet.
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
               </div>
             </div>
-          )
+          </div>
+        )}
+
+        {/* Delete Confirmation Modal */}
+        {deleteConfirmationId && (
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-gunmetal w-full max-w-md rounded-[40px] p-10 border border-white/10 shadow-2xl transform animate-in zoom-in duration-300 text-center">
+              <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+              </div>
+              <h3 className="text-2xl font-black tracking-tight mb-2">Confirm Deletion</h3>
+              <p className="text-gray-400 font-medium mb-8">Are you sure you want to permanently remove this assessment item? This action cannot be undone.</p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirmationId(null)}
+                  className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest bg-white/5 rounded-xl hover:bg-white/10 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 py-3 text-[10px] font-black uppercase tracking-widest bg-red-500 text-white rounded-xl shadow-xl shadow-red-500/20 hover:brightness-110 transition-all"
+                >
+                  Delete Forever
+                </button>
+              </div>
+            </div>
+          </div>
+        )
         }
         {
           activeTab === 'profile' && (

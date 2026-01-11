@@ -12,6 +12,10 @@ router.route('/')
     .get(quizController.getQuizzes)
     .post(restrictTo(UserRole.CONTRIBUTOR, UserRole.ADMIN), quizController.createQuiz);
 
+// Submit Result
 router.post('/results', quizController.submitResult);
+
+// Get Results for a specific quiz (Contributor only?)
+router.get('/:id/results', restrictTo(UserRole.CONTRIBUTOR, UserRole.ADMIN), quizController.getQuizResults);
 
 export default router;
