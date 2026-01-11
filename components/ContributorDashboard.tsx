@@ -561,14 +561,41 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                           </button>
                         ))}
                       </div>
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Options (Select Correct Answer)</label>
+                        {currentNewQuestion.options.map((opt, idx) => (
+                          <div key={idx} className="flex gap-2 items-center">
+                            <input
+                              type="radio"
+                              name="correctOption"
+                              checked={currentNewQuestion.correct === idx}
+                              onChange={() => setCurrentNewQuestion({ ...currentNewQuestion, correct: idx })}
+                              className="appearance-none w-4 h-4 rounded-full border border-white/20 checked:bg-contributor checked:border-contributor cursor-pointer transition-all"
+                            />
+                            <input
+                              value={opt}
+                              onChange={(e) => {
+                                const newOps = [...currentNewQuestion.options];
+                                newOps[idx] = e.target.value;
+                                setCurrentNewQuestion({ ...currentNewQuestion, options: newOps });
+                              }}
+                              className="flex-grow bg-matte border border-white/10 rounded-xl px-4 py-2 text-xs text-offwhite focus:border-contributor outline-none transition-colors"
+                              placeholder={`Option ${String.fromCharCode(65 + idx)}`}
+                            />
+                          </div>
+                        ))}
+                      </div>
+
                       <button
                         type="button"
                         onClick={addQuestionToBatch}
-                        disabled={!currentNewQuestion.text}
+                        disabled={!currentNewQuestion.text || currentNewQuestion.options.some(o => !o)}
                         className="w-full py-3 text-[10px] font-black uppercase tracking-widest bg-white/10 hover:bg-white/20 text-white rounded-xl transition-all disabled:opacity-50"
                       >
                         + Add Question to Quiz
                       </button>
+
                     </div>
                   </div>
 
