@@ -433,7 +433,6 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                   <p className="text-xs text-gray-500 mb-8 font-medium">{file.size} • Verified {file.date}</p>
                   <div className="flex gap-3">
                     <button onClick={() => openEditModule(file)} className="flex-1 text-[10px] font-black uppercase tracking-widest py-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">Edit Code</button>
-                    <button className="flex-1 text-[10px] font-black uppercase tracking-widest py-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">Waveform</button>
                   </div>
                 </div>
               ))}
