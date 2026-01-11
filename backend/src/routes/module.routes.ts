@@ -11,6 +11,7 @@ router.route('/')
     .post(protect, restrictTo(UserRole.CONTRIBUTOR, UserRole.ADMIN), moduleController.createModule);
 
 router.route('/:id')
-    .get(moduleController.getModule);
+    .get(moduleController.getModule)
+    .put(protect, restrictTo(UserRole.CONTRIBUTOR, UserRole.ADMIN), moduleController.updateModule);
 
 export default router;

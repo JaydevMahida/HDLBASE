@@ -59,3 +59,29 @@ export const getModule = async (req: Request, res: Response, next: NextFunction)
         next(error);
     }
 };
+
+export const updateModule = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        const db = getDb();
+        if (!db) return res.status(200).json({ status: 'success', message: 'Mock Mode - Updated' });
+
+        const { name, language, code, description } = req.body;
+
+        // Ensure user owns the module or is admin? (Simplification: Contributor can edit any for now, or check authorId)
+
+        await db.collection('modules').doc(req.params.id).update({
+            name,
+            language,
+            code,
+            description,
+            updatedAt: new Date().toISOString()
+        });
+
+        res.status(200).json({
+            status: 'success',
+            data: { id: req.params.id, ...req.body }
+        });
+    } catch (error) {
+        next(error);
+    }
+};

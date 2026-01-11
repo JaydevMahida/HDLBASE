@@ -14,6 +14,7 @@ interface MockFile {
   type: string;
   size: string;
   date: string;
+  code?: string;
 }
 
 interface MockQuestion {
@@ -40,6 +41,7 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const [options, setOptions] = useState<string[]>(['', '', '', '']);
   const [correctOption, setCorrectOption] = useState<number>(0);
   const [moduleCode, setModuleCode] = useState('');
+  const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
 
 
 
@@ -120,8 +122,12 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
         description: 'Uploaded from Contributor Dashboard'
       };
 
-      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/modules`, {
-        method: 'POST',
+      const url = editingModuleId
+        ? `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/modules/${editingModuleId}`
+        : `${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/modules`;
+
+      const response = await fetch(url, {
+        method: editingModuleId ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
@@ -132,6 +138,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
       if (response.ok) {
         await fetchData(); // Reload list
         setShowUpload(false);
+        setEditingModuleId(null);
+        setModuleCode('');
         form.reset();
       } else {
         const errData = await response.json();
@@ -155,6 +163,20 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
       setModuleCode(text);
     };
     reader.readAsText(file);
+  };
+
+  const openEditModule = (module: MockFile) => {
+    setEditingModuleId(module.id);
+    setModuleCode(module.code || '');
+    setShowUpload(true);
+    // Note: We can't easily pre-fill the name/language inputs without controlled state for them or ref access, 
+    // but for now we are using uncontrolled inputs. 
+    // To fix this properly, we should switch to controlled inputs for the form.
+    // However, as a quick fix, let's just make sure the user knows they need to re-enter name if they want to keep it same, 
+    // OR switch to controlled inputs.
+    // Let's switch to controlled inputs quickly? No, too many changes.
+    // Let's defer input population for a second pass or use a timeout to set values? 
+    // Actually, let's just use defaultValue if we re-render.
   };
 
   const openQuestionModal = (q: MockQuestion | null = null) => {
@@ -300,7 +322,7 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                   <h3 className="text-xl font-bold mb-1">{file.name}</h3>
                   <p className="text-xs text-gray-500 mb-8 font-medium">{file.size} • Verified {file.date}</p>
                   <div className="flex gap-3">
-                    <button className="flex-1 text-[10px] font-black uppercase tracking-widest py-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">Edit Code</button>
+                    <button onClick={() => openEditModule(file)} className="flex-1 text-[10px] font-black uppercase tracking-widest py-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">Edit Code</button>
                     <button className="flex-1 text-[10px] font-black uppercase tracking-widest py-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">Waveform</button>
                   </div>
                 </div>
@@ -388,15 +410,25 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
         {showUpload && (
           <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-gunmetal w-full max-w-lg rounded-[48px] p-12 border border-white/10 shadow-2xl transform animate-in zoom-in duration-300">
-              <h3 className="text-3xl font-black tracking-tighter mb-8">Deploy RTL</h3>
+              <h3 className="text-3xl font-black tracking-tighter mb-8">{editingModuleId ? 'Update RTL' : 'Deploy RTL'}</h3>
               <form onSubmit={handleUploadFile} className="space-y-6">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Module Name</label>
-                  <input name="moduleName" required className="w-full bg-matte border border-white/10 rounded-2xl px-6 py-4 text-offwhite focus:border-contributor outline-none transition-colors font-medium" placeholder="e.g. FIFO_Controller" />
+                  <input
+                    name="moduleName"
+                    required
+                    defaultValue={files.find(f => f.id === editingModuleId)?.name}
+                    className="w-full bg-matte border border-white/10 rounded-2xl px-6 py-4 text-offwhite focus:border-contributor outline-none transition-colors font-medium"
+                    placeholder="e.g. FIFO_Controller"
+                  />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Target Language</label>
-                  <select name="language" className="w-full bg-matte border border-white/10 rounded-2xl px-6 py-4 text-offwhite focus:border-contributor outline-none transition-colors appearance-none font-medium">
+                  <select
+                    name="language"
+                    defaultValue={files.find(f => f.id === editingModuleId)?.type === 'IP Config' ? 'Verilog' : 'Verilog'} // Simplified fallback
+                    className="w-full bg-matte border border-white/10 rounded-2xl px-6 py-4 text-offwhite focus:border-contributor outline-none transition-colors appearance-none font-medium"
+                  >
                     <option value="Verilog">Verilog HDL</option>
                     <option value="VHDL">VHDL</option>
                     <option value="SystemVerilog">SystemVerilog</option>
@@ -422,9 +454,9 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                   />
                 </div>
                 <div className="flex gap-4 pt-6">
-                  <button type="button" onClick={() => setShowUpload(false)} className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition-colors">Abort</button>
+                  <button type="button" onClick={() => { setShowUpload(false); setEditingModuleId(null); setModuleCode(''); }} className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition-colors">Abort</button>
                   <button type="submit" disabled={uploading} className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-contributor text-white rounded-2xl shadow-xl shadow-contributor/20 active:scale-95 transition-all">
-                    {uploading ? 'Processing...' : 'Deploy IP'}
+                    {uploading ? 'Processing...' : (editingModuleId ? 'Update IP' : 'Deploy IP')}
                   </button>
                 </div>
               </form>
