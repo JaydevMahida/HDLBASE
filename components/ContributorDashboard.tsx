@@ -68,7 +68,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
           name: m.name,
           type: m.type,
           size: m.size || '1 KB',
-          date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'Recent'
+          date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'Recent',
+          code: m.code || ''
         })));
 
         if (modulesData.message && modulesData.message.includes('Mock Mode')) {
