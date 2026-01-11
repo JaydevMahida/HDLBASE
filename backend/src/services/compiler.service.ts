@@ -51,8 +51,8 @@ export class CompilerService {
             // Compile: iverilog -o out design.v tb.v
             await execPromise(`iverilog -o ${outPath} ${designPath} ${tbPath}`);
 
-            // Run: vvp out
-            const { stdout, stderr } = await execPromise(`vvp ${outPath}`);
+            // Run: vvp out with 5s timeout
+            const { stdout, stderr } = await execPromise(`vvp ${outPath}`, { timeout: 5000 });
 
             cleanup();
             return {

@@ -38,8 +38,8 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const [quizFinished, setQuizFinished] = useState(false);
 
   // Playground State
-  const [code, setCode] = useState('// Implementation\nmodule design(output a);\n  assign a = 1;\nendmodule');
-  const [testbenchCode, setTestbenchCode] = useState('// Testbench\nmodule tb;\n  wire a;\n  design uut(a);\n  initial begin\n    $monitor("Time=%0d a=%b", $time, a);\n    #10 $finish;\n  end\nendmodule');
+  const [code, setCode] = useState('// Implementation\nmodule my_design(output a);\n  assign a = 1;\nendmodule');
+  const [testbenchCode, setTestbenchCode] = useState('// Testbench\nmodule tb;\n  wire a;\n  my_design uut(a);\n  initial begin\n    $monitor("Time=%0d a=%b", $time, a);\n    #10 $finish;\n  end\nendmodule');
   const [compilationOutput, setCompilationOutput] = useState<string>('');
   const [isCompiling, setIsCompiling] = useState(false);
 
