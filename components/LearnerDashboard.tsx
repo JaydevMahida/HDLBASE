@@ -57,6 +57,7 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const [downloadingModule, setDownloadingModule] = useState<any>(null);
   const [downloadFormat, setDownloadFormat] = useState('Verilog');
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -336,23 +337,37 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
       <main className="flex-grow max-w-7xl mx-auto w-full p-6 md:p-12">
         {activeTab === 'modules' && (
           <div className="space-y-12">
-            <header>
-              <h2 className="text-4xl font-black tracking-tight mb-2">Knowledge Base</h2>
-              <p className="text-gray-400 font-medium">Download verified RTL building blocks for your student projects.</p>
+            <header className="flex flex-col md:flex-row justify-between items-end gap-6">
+              <div>
+                <h2 className="text-4xl font-black tracking-tight mb-2">Knowledge Base</h2>
+                <p className="text-gray-400 font-medium">Download verified RTL building blocks for your student projects.</p>
+              </div>
+              <div className="relative w-full md:w-96">
+                <input
+                  type="text"
+                  placeholder="Search modules..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-gunmetal border border-white/10 rounded-2xl px-6 py-4 pl-12 text-offwhite focus:border-learner outline-none transition-colors font-bold shadow-lg shadow-black/20"
+                />
+                <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </div>
             </header>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
               {loading ? (
                 <div className="col-span-full py-20 text-center text-gray-500 font-bold animate-pulse">Loading modules...</div>
-              ) : modules.length > 0 ? (
-                modules.map((item) => (
-                  <div key={item.name} className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-learner/50 transition-all group">
+              ) : modules.filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase())).length > 0 ? (
+                modules.filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase())).map((item) => (
+                  <div key={item.name} className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-learner/50 transition-all group animate-fade-in">
                     <div className="text-[10px] text-gray-600 mb-3 font-black uppercase tracking-widest">Educational IP</div>
                     <h4 className="text-xl font-bold text-accent mb-8 group-hover:text-learner transition-colors">{item.name}</h4>
                     <button onClick={() => handleDownloadClick(item)} className="w-full py-3 bg-white/5 text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-learner hover:text-white transition-all">Download Source</button>
                   </div>
                 ))
               ) : (
-                <div className="col-span-full py-20 text-center text-gray-500 font-bold">No modules found.</div>
+                <div className="col-span-full py-20 text-center text-gray-500 font-bold border border-dashed border-white/5 rounded-3xl">No modules found matching "{searchQuery}".</div>
               )}
             </div>
           </div>
