@@ -820,41 +820,105 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
         }
         {
           activeTab === 'profile' && (
-            <div className="animate-fade-in max-w-4xl mx-auto space-y-8 mt-8">
-              {stats ? (
-                <>
-                  <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5 flex items-center justify-between">
-                    <div>
-                      <div className="text-sm font-bold text-gray-500 mb-1">CONTRIBUTOR PROFILE</div>
-                      <h2 className="text-3xl font-black text-white mb-2">{stats.username}</h2>
-                      <div className="flex gap-4">
-                        <span className="bg-contributor/10 text-contributor px-3 py-1 rounded-full text-xs font-bold border border-contributor/20">
-                          ROLE: CONTRIBUTOR
-                        </span>
+            <div className="max-w-6xl mx-auto py-8 text-offwhite animate-fade-in">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+
+                {/* LEFT COLUMN: VENDOR CARD */}
+                <div className="md:col-span-4 lg:col-span-3 space-y-6">
+                  <div className="bg-gunmetal rounded-[24px] border border-white/5 overflow-hidden shadow-2xl relative">
+                    <div className="h-24 bg-gradient-to-br from-contributor to-emerald-900 relative">
+                      <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'linear-gradient(45deg, white 1px, transparent 0)', backgroundSize: '10px 10px' }}></div>
+                    </div>
+                    <div className="px-6 pb-6 relative">
+                      <div className="w-24 h-24 rounded-2xl bg-contributor border-4 border-gunmetal shadow-xl -mt-12 mb-4 flex items-center justify-center text-3xl select-none text-white">
+                        {stats?.username ? stats.username[0].toUpperCase() : 'C'}
+                      </div>
+                      <h2 className="text-xl font-black text-white tracking-tight mb-1">{stats?.username || 'Verified Sponsor'}</h2>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4">Enterprise Edition</div>
+
+                      <div className="bg-white/5 rounded-xl p-3 border border-white/5 mb-6">
+                        <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Vendor Tier</div>
+                        <div className="text-lg font-black text-contributor">Silicon Architect</div>
+                        <div className="text-[9px] text-gray-600 font-mono mt-1">Level 4 Partner</div>
+                      </div>
+
+                      <div className="space-y-3 text-xs text-gray-400 font-medium">
+                        <div className="flex justify-between border-b border-white/5 pb-2">
+                          <span>Joined</span>
+                          <span className="text-white">Mar 2026</span>
+                        </div>
+                        <div className="flex justify-between border-b border-white/5 pb-2">
+                          <span>IP License</span>
+                          <span className="text-white">Open Source</span>
+                        </div>
                       </div>
                     </div>
-                    <div className="h-20 w-20 bg-gradient-to-br from-contributor to-emerald-600 rounded-2xl flex items-center justify-center shadow-lg shadow-contributor/20">
-                      <span className="text-3xl">👨‍💻</span>
+                  </div>
+                </div>
+
+                {/* RIGHT COLUMN: DATASHEET */}
+                <div className="md:col-span-8 lg:col-span-9 space-y-8">
+
+                  {/* 1. Metrics Grid */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="bg-gunmetal p-6 rounded-[24px] border border-white/5 relative overflow-hidden group">
+                      <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Deployed Artifacts</div>
+                      <div className="text-3xl font-black text-white mb-1">{(stats?.modules || 0) + (stats?.quizzes || 0)}</div>
+                      <div className="text-[10px] text-contributor font-bold">Total Contributions</div>
+                    </div>
+                    <div className="bg-gunmetal p-6 rounded-[24px] border border-white/5 relative overflow-hidden group">
+                      <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">IP Cores</div>
+                      <div className="text-3xl font-black text-white mb-1">{stats?.modules || 0}</div>
+                      <div className="text-[10px] text-emerald-500 font-bold">RTL Modules</div>
+                    </div>
+                    <div className="bg-gunmetal p-6 rounded-[24px] border border-white/5 relative overflow-hidden group">
+                      <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Assessments</div>
+                      <div className="text-3xl font-black text-white mb-1">{stats?.quizzes || 0}</div>
+                      <div className="text-[10px] text-blue-500 font-bold">Challenges Created</div>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-8">
-                    <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-contributor/30 transition-colors">
-                      <div className="text-5xl font-black text-white mb-2">{stats.modules || 0}</div>
-                      <div className="text-gray-400 font-bold uppercase tracking-widest text-sm">Modules Uploaded</div>
+                  {/* 2. Commit Graph / Heatmap (Mock) */}
+                  <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5 overflow-hidden">
+                    <h3 className="text-lg font-black tracking-tight mb-6 flex items-center gap-2">
+                      <span className="text-contributor">///</span> Deployment Frequency
+                    </h3>
+                    <div className="flex gap-1 flex-wrap justify-between opacity-50 hover:opacity-100 transition-opacity">
+                      {Array.from({ length: 52 }).map((_, i) => (
+                        <div key={i} className="w-2 h-8 rounded-sm bg-white/5 flex flex-col gap-1">
+                          {Array.from({ length: 7 }).map((_, j) => (
+                            <div key={j} className={`w-2 h-2 rounded-sm ${Math.random() > 0.8 ? 'bg-contributor/80' : 'bg-transparent'}`}></div>
+                          ))}
+                        </div>
+                      ))}
                     </div>
-                    <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-contributor/30 transition-colors">
-                      <div className="text-5xl font-black text-white mb-2">{stats.quizzes || 0}</div>
-                      <div className="text-gray-400 font-bold uppercase tracking-widest text-sm">Quizzes Created</div>
+                    <div className="text-[10px] text-gray-600 font-mono mt-4 text-right">Last 12 Months</div>
+                  </div>
+
+                  {/* 3. Latest Uploads */}
+                  <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5">
+                    <h3 className="text-lg font-black tracking-tight mb-6 flex items-center gap-2">
+                      <span className="text-gray-500">///</span> Latest IP Releases
+                    </h3>
+                    <div className="space-y-4">
+                      {files.slice(0, 3).map(file => (
+                        <div key={file.id} className="flex items-center gap-4 p-4 bg-white/2 rounded-2xl hover:bg-white/5 transition-colors border border-white/5">
+                          <div className="w-10 h-10 bg-contributor/10 rounded-lg flex items-center justify-center text-contributor">📦</div>
+                          <div className="flex-grow">
+                            <div className="text-sm font-bold text-white">{file.name}</div>
+                            <div className="text-[10px] text-gray-500 uppercase tracking-widest">{file.type} • {file.size}</div>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-[10px] bg-white/10 px-2 py-1 rounded text-white font-mono">{file.date}</div>
+                          </div>
+                        </div>
+                      ))}
+                      {files.length === 0 && <div className="text-gray-500 italic text-sm">No recent uploads.</div>}
                     </div>
                   </div>
-                </>
-              ) : (
-                <div className="text-center py-20">
-                  <div className="text-gray-500 mb-4">Loading stats...</div>
-                  <div className="text-xs text-gray-600">If this takes too long, ensure Backend is running.</div>
+
                 </div>
-              )}
+              </div>
             </div>
           )
         }

@@ -596,30 +596,138 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
         }
 
         {activeTab === 'progress' && (
-          <div className="max-w-4xl mx-auto py-12">
-            <div className="space-y-8 animate-fade-in">
-              {/* User Profile Stats Card - ALWAYS SHOW IF TAB IS PROGRESS */}
-              <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5 relative overflow-hidden">
-                <div className="relative z-10 flex items-center justify-between">
-                  <div>
-                    <div className="text-sm font-bold text-gray-500 mb-1">LEARNER PROFILE</div>
-                    <h2 className="text-3xl font-black text-white mb-2">{stats?.username || 'Learner'}</h2>
-                    <div className="flex gap-4">
-                      <span className="bg-learner/10 text-learner px-3 py-1 rounded-full text-xs font-bold border border-learner/20">
-                        ACCURACY: {stats?.accuracy || 0}%
-                      </span>
-                      <span className="bg-purple-500/10 text-purple-400 px-3 py-1 rounded-full text-xs font-bold border border-purple-500/20">
-                        SOLVED: {stats?.solved || 0}
-                      </span>
+          <div className="max-w-6xl mx-auto py-8 text-offwhite animate-fade-in">
+            {/* Split Layout: Left Profile Card vs Right Stats/Details */}
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-8">
+
+              {/* LEFT COLUMN: THE ENGINEER CARD */}
+              <div className="md:col-span-4 lg:col-span-3 space-y-6">
+                <div className="bg-gunmetal rounded-[24px] border border-white/5 overflow-hidden shadow-2xl relative">
+                  {/* Decorative Header Background */}
+                  <div className="h-24 bg-gradient-to-br from-gray-800 to-black relative overflow-hidden">
+                    <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '20px 20px' }}></div>
+                  </div>
+
+                  <div className="px-6 pb-6 relative">
+                    {/* Avatar */}
+                    <div className="w-24 h-24 rounded-2xl bg-learner border-4 border-gunmetal shadow-xl -mt-12 mb-4 flex items-center justify-center text-3xl select-none">
+                      {stats?.username ? stats.username[0].toUpperCase() : 'L'}
+                    </div>
+
+                    {/* Identity */}
+                    <h2 className="text-xl font-black text-white tracking-tight mb-1">{stats?.username || 'Unknown Learner'}</h2>
+                    <div className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4">Learner Profile</div>
+
+                    {/* Rank Badge */}
+                    <div className="bg-white/5 rounded-xl p-3 border border-white/5 mb-6">
+                      <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mb-1">Rank</div>
+                      <div className="text-lg font-black text-learner">
+                        {(stats?.solved || 0) < 5 ? 'Beginner' : (stats?.solved || 0) < 15 ? 'Intermediate' : 'Advanced'}
+                      </div>
+                      <div className="text-[9px] text-gray-600 font-mono mt-1">{(stats?.solved || 0) < 5 ? 'Level 1' : (stats?.solved || 0) < 15 ? 'Level 5' : 'Level 10'}</div>
+                    </div>
+
+                    {/* Meta Info */}
+                    <div className="space-y-3 text-xs text-gray-400 font-medium">
+                      <div className="flex justify-between border-b border-white/5 pb-2">
+                        <span>Member Since</span>
+                        <span className="text-white">Jan 2026</span>
+                      </div>
+                      <div className="flex justify-between border-b border-white/5 pb-2">
+                        <span>Last Active</span>
+                        <span className="text-white">Today</span>
+                      </div>
+                      <div className="flex justify-between border-b border-white/5 pb-2">
+                        <span>Status</span>
+                        <span className="text-green-500">Online</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="h-16 w-16 bg-gradient-to-br from-learner to-blue-600 rounded-2xl flex items-center justify-center shadow-lg shadow-learner/20">
-                    <span className="text-2xl">🎓</span>
+                </div>
+
+                {/* Badges / Achievements (Live) */}
+                <div className="bg-gunmetal rounded-[24px] border border-white/5 p-6">
+                  <h4 className="text-[10px] font-black uppercase tracking-widest text-gray-500 mb-4">Achievements</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {(stats?.solved || 0) > 0 ? (
+                      <span className="w-8 h-8 bg-learner/20 rounded-lg flex items-center justify-center text-lg border border-learner/30 grayscale-0" title="First Solved">⚡</span>
+                    ) : (
+                      <span className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center text-lg border border-white/5 grayscale opacity-50" title="First Solved (Locked)">⚡</span>
+                    )}
+                    {(stats?.accuracy || 0) > 80 ? (
+                      <span className="w-8 h-8 bg-blue-500/20 rounded-lg flex items-center justify-center text-lg border border-blue-500/30" title="High Accuracy">🎯</span>
+                    ) : (
+                      <span className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center text-lg border border-white/5 grayscale opacity-50" title="High Accuracy (Locked)">🎯</span>
+                    )}
+                    {(stats?.solved || 0) > 10 ? (
+                      <span className="w-8 h-8 bg-orange-500/20 rounded-lg flex items-center justify-center text-lg border border-orange-500/30" title="Consistent Learner">🔥</span>
+                    ) : (
+                      <span className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center text-lg border border-white/5 grayscale opacity-50" title="Consistent Learner (Locked)">🔥</span>
+                    )}
                   </div>
                 </div>
               </div>
 
+              {/* RIGHT COLUMN: THE SPEC SHEET */}
+              <div className="md:col-span-8 lg:col-span-9 space-y-8">
 
+                {/* 1. Main Stats Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-gunmetal p-6 rounded-[24px] border border-white/5 relative overflow-hidden group">
+                    <div className="absolute right-0 top-0 w-24 h-24 bg-learner/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Honor Points</div>
+                    <div className="text-3xl font-black text-white mb-1">{(stats?.solved || 0) * 150 + (stats?.accuracy || 0) * 10}</div>
+                    <div className="text-[10px] text-learner font-bold">Total Score</div>
+                  </div>
+                  <div className="bg-gunmetal p-6 rounded-[24px] border border-white/5 relative overflow-hidden group">
+                    <div className="absolute right-0 top-0 w-24 h-24 bg-blue-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Challenges Solved</div>
+                    <div className="text-3xl font-black text-white mb-1">{stats?.solved || 0}</div>
+                    <div className="text-[10px] text-blue-500 font-bold">Problems Completed</div>
+                  </div>
+                  <div className="bg-gunmetal p-6 rounded-[24px] border border-white/5 relative overflow-hidden group">
+                    <div className="absolute right-0 top-0 w-24 h-24 bg-purple-500/5 rounded-bl-full -mr-4 -mt-4 transition-transform group-hover:scale-110"></div>
+                    <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-2">Accuracy</div>
+                    <div className="text-3xl font-black text-white mb-1">{stats?.accuracy || 0}%</div>
+                    <div className="text-[10px] text-purple-500 font-bold">Success Rate</div>
+                  </div>
+                </div>
+
+                {/* 2. Recent Activity / Log */}
+                <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5">
+                  <h3 className="text-lg font-black tracking-tight mb-6 flex items-center gap-2">
+                    <span className="text-gray-500">///</span> Recent Activity
+                  </h3>
+                  <div className="space-y-4">
+                    {/* Mock Activity List */}
+                    <div className="flex items-center gap-4 p-4 bg-white/2 rounded-2xl hover:bg-white/5 transition-colors border border-white/5">
+                      <div className="text-2xl opacity-50">📝</div>
+                      <div className="flex-grow">
+                        <div className="text-sm font-bold text-white">Visited Knowledge Base</div>
+                        <div className="text-[10px] text-gray-500 uppercase tracking-widest">Studying</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs font-black text-blue-500">VIEW</div>
+                        <div className="text-[10px] text-gray-600">Just now</div>
+                      </div>
+                    </div>
+                    {(stats?.solved || 0) > 0 && (
+                      <div className="flex items-center gap-4 p-4 bg-white/2 rounded-2xl hover:bg-white/5 transition-colors border border-white/5">
+                        <div className="text-2xl opacity-50">✅</div>
+                        <div className="flex-grow">
+                          <div className="text-sm font-bold text-white">Solved a Challenge</div>
+                          <div className="text-[10px] text-gray-500 uppercase tracking-widest">Progress Update</div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-xs font-black text-green-500">+150 XP</div>
+                          <div className="text-[10px] text-gray-600">Recently</div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+              </div>
             </div>
           </div>
         )}
