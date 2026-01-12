@@ -7,6 +7,7 @@ import Login from './components/Login';
 import ContributorDashboard from './components/ContributorDashboard';
 import LearnerDashboard from './components/LearnerDashboard';
 import Signup from './components/Signup';
+import ChallengeRunner from './components/ChallengeRunner';
 
 // Helper to get imports safely
 import { auth, db } from './firebase';
@@ -138,6 +139,11 @@ const App: React.FC = () => {
               <Navigate to="/" />
             )
           }
+        />
+
+        <Route
+          path="/challenge/:id"
+          element={currentUser ? <ChallengeRunner /> : <Navigate to="/" />}
         />
 
         <Route path="*" element={<Navigate to="/" />} />

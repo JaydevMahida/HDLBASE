@@ -31,7 +31,7 @@ interface MockQuestion {
 
 const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'hdl' | 'mcq' | 'team' | 'profile'>(
+  const [activeTab, setActiveTab] = useState<'hdl' | 'mcq' | 'team' | 'profile' | 'challenges'>(
     () => (localStorage.getItem('contributor_active_tab') as any) || 'hdl'
   );
 
@@ -134,6 +134,15 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
       if (statsData.status === 'success') {
         setStats(statsData.data);
       }
+
+      // Fetch Challenges
+      try {
+        const challRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/challenges`, { headers });
+        const challData = await challRes.json();
+        if (challData.status === 'success') {
+          setChallenges(challData.data);
+        }
+      } catch (e) { console.error("Failed challenges fetch", e); }
     } catch (err) {
       console.error('Failed to fetch dashboard data', err);
     } finally {
@@ -295,6 +304,17 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const [newQuizQuestions, setNewQuizQuestions] = useState<any[]>([]);
   const [currentNewQuestion, setCurrentNewQuestion] = useState({ text: '', difficulty: 'Medium', correct: 0, options: ['', '', '', ''] });
 
+  // --- CHALLENGE LOGIC ---
+  const [challenges, setChallenges] = useState<any[]>([]);
+  const [showChallengeModal, setShowChallengeModal] = useState(false);
+  const [challengeForm, setChallengeForm] = useState({
+    title: '',
+    difficulty: 'Medium',
+    description: '',
+    initialCode: '// Module Declaration\nmodule challenge(input clk);\n\nendmodule',
+    testbench: '// Verification Code\nmodule tb;\n  // Instantiate and Test\nendmodule'
+  });
+
   const addQuestionToBatch = () => {
     setNewQuizQuestions([...newQuizQuestions, { ...currentNewQuestion, id: Date.now().toString() }]);
     setCurrentNewQuestion({ text: '', difficulty: 'Medium', correct: 0, options: ['', '', '', ''] });
@@ -429,6 +449,45 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
     }
   };
 
+  const handleSaveChallenge = async () => {
+    if (!challengeForm.title || !challengeForm.description || !challengeForm.testbench) {
+      alert("Please fill all required fields (Title, Description, Testbench)");
+      return;
+    }
+    setUploading(true);
+    try {
+      const session = localStorage.getItem('hdlbase_mock_session');
+      const sessionData = JSON.parse(session);
+      const token = sessionData.token || sessionData.uid;
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/challenges`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        body: JSON.stringify(challengeForm)
+      });
+
+      if (response.ok) {
+        setShowChallengeModal(false);
+        setChallengeForm({
+          title: '',
+          difficulty: 'Medium',
+          description: '',
+          initialCode: '// Module Declaration\nmodule challenge(input clk);\n\nendmodule',
+          testbench: '// Verification Code\nmodule tb;\n  // Instantiate and Test\nendmodule'
+        });
+        fetchData();
+        alert("Challenge Created Successfully!");
+      } else {
+        const err = await response.json();
+        alert(`Failed to create challenge: ${err.message}`);
+      }
+    } catch (e: any) {
+      alert(`Error: ${e.message}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-matte text-offwhite flex flex-col">
       <nav className="border-b border-white/5 bg-gunmetal/30 p-4 sticky top-0 backdrop-blur-md z-20">
@@ -465,6 +524,12 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                 className={`text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg font-black transition-all ${activeTab === 'profile' ? 'bg-contributor text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
               >
                 Profile
+              </button>
+              <button
+                onClick={() => setActiveTab('challenges')}
+                className={`text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg font-black transition-all ${activeTab === 'challenges' ? 'bg-contributor text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                Challenges
               </button>
             </div>
           </div>
@@ -596,6 +661,42 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
           </div>
         )}
 
+        {activeTab === 'challenges' && (
+          <>
+            <div className="flex justify-between items-end mb-12">
+              <div>
+                <h2 className="text-4xl font-black tracking-tight">Challenge Studio</h2>
+                <p className="text-gray-400 font-medium">Create and manage hardware coding problems.</p>
+              </div>
+              <button onClick={() => setShowChallengeModal(true)} className="bg-contributor text-white px-8 py-3 rounded-2xl font-black text-sm hover:brightness-110 shadow-2xl transition-all">
+                Create Challenge
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {challenges.map(c => (
+                <div key={c.id} className="bg-gunmetal p-8 rounded-[32px] border border-white/5 flex flex-col">
+                  <div className="flex justify-between items-start mb-4">
+                    <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${c.difficulty === 'Easy' ? 'bg-green-500/10 text-green-500' :
+                      c.difficulty === 'Medium' ? 'bg-orange-500/10 text-orange-500' :
+                        'bg-red-500/10 text-red-500'
+                      }`}>{c.difficulty}</span>
+                  </div>
+                  <h3 className="text-xl font-bold mb-2">{c.title}</h3>
+                  <p className="text-gray-500 text-xs mb-6 line-clamp-3">{c.description}</p>
+                  <div className="mt-auto border-t border-white/5 pt-4 text-[10px] font-mono text-gray-500">
+                    ID: {c.id.substring(0, 8)}
+                  </div>
+                </div>
+              ))}
+              {challenges.length === 0 && (
+                <div className="col-span-full py-40 text-center border-dashed border-2 border-white/5 rounded-[32px] text-gray-500 text-xs font-black uppercase tracking-widest">
+                  No Challenges Created Yet
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
         {showUpload && (
           <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-gunmetal w-full max-w-lg rounded-[48px] p-12 border border-white/10 shadow-2xl transform animate-in zoom-in duration-300">
@@ -671,6 +772,75 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
               </form>
             </div>
           </div >
+        )}
+
+        {showChallengeModal && (
+          <div className="fixed inset-0 bg-black/90 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <div className="bg-gunmetal w-full max-w-2xl rounded-[48px] p-12 border border-white/10 shadow-2xl overflow-y-auto max-h-[90vh] custom-scrollbar">
+              <h3 className="text-3xl font-black tracking-tighter mb-8">New Hardware Challenge</h3>
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Challenge Title</label>
+                  <input
+                    value={challengeForm.title}
+                    onChange={(e) => setChallengeForm({ ...challengeForm, title: e.target.value })}
+                    className="w-full bg-matte border border-white/10 rounded-2xl px-6 py-4 text-offwhite focus:border-contributor outline-none text-lg font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Difficulty</label>
+                  <div className="flex gap-2">
+                    {['Easy', 'Medium', 'Hard'].map(lvl => (
+                      <button
+                        key={lvl}
+                        onClick={() => setChallengeForm({ ...challengeForm, difficulty: lvl })}
+                        className={`flex-1 py-3 rounded-xl text-xs font-black uppercase tracking-widest border transition-all ${challengeForm.difficulty === lvl ? 'bg-contributor text-white border-contributor' : 'bg-matte text-gray-500 border-white/5'
+                          }`}
+                      >
+                        {lvl}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Description (Markdown)</label>
+                  <textarea
+                    value={challengeForm.description}
+                    onChange={(e) => setChallengeForm({ ...challengeForm, description: e.target.value })}
+                    className="w-full h-32 bg-matte border border-white/10 rounded-2xl px-6 py-4 text-offwhite focus:border-contributor outline-none font-mono text-sm resize-none"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Boilerplate Code (Visible)</label>
+                    <textarea
+                      value={challengeForm.initialCode}
+                      onChange={(e) => setChallengeForm({ ...challengeForm, initialCode: e.target.value })}
+                      className="w-full h-40 bg-[#1e1e1e] border border-white/10 rounded-2xl px-4 py-3 text-gray-300 font-mono text-xs resize-none"
+                      spellCheck={false}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-contributor">Verification Testbench (Hidden)</label>
+                    <textarea
+                      value={challengeForm.testbench}
+                      onChange={(e) => setChallengeForm({ ...challengeForm, testbench: e.target.value })}
+                      className="w-full h-40 bg-[#1e1e1e] border border-white/10 rounded-2xl px-4 py-3 text-gray-300 font-mono text-xs resize-none"
+                      spellCheck={false}
+                    />
+                    <p className="text-[9px] text-gray-500">Must include <code className="text-white">$finish</code> and <code className="text-white">$display</code> calls.</p>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 pt-6 border-t border-white/10">
+                  <button onClick={() => setShowChallengeModal(false)} className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10">Cancel</button>
+                  <button onClick={handleSaveChallenge} disabled={uploading} className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-contributor text-white rounded-2xl shadow-xl shadow-contributor/20">
+                    {uploading ? 'Creating...' : 'Launch Challenge'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
 
         {

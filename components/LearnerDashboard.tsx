@@ -28,7 +28,7 @@ interface UserStats {
 
 const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'modules' | 'quiz' | 'playground' | 'progress'>(
+  const [activeTab, setActiveTab] = useState<'modules' | 'quiz' | 'playground' | 'progress' | 'challenges'>(
     () => (localStorage.getItem('learner_active_tab') as any) || 'modules'
   );
 
@@ -59,38 +59,46 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [quizSearchQuery, setQuizSearchQuery] = useState('');
+  const [challenges, setChallenges] = useState<any[]>([]); // New Challenge State
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const session = localStorage.getItem('hdlbase_mock_session');
+        if (!session) return;
         const sessionData = JSON.parse(session);
         const token = sessionData.token || sessionData.uid;
         const headers = { 'Authorization': `Bearer ${token}` };
 
+        // 1. Stats
+        try {
+          const statsRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/users/stats`, { headers });
+          const statsData = await statsRes.json();
+          if (statsData.status === 'success') setStats(statsData.data);
+        } catch (e) { console.error("Stats error", e); }
 
-        // Fetch Stats
-        const statsRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/users/stats`, { headers });
-        const statsData = await statsRes.json();
-        if (statsData.status === 'success') {
-          setStats(statsData.data);
-        }
+        // 2. Modules
+        try {
+          const modulesRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/modules`, { headers });
+          const modulesData = await modulesRes.json();
+          if (modulesData.status === 'success') setModules(modulesData.data);
+        } catch (e) { console.error("Modules error", e); }
 
-        // Fetch Modules (for Knowledge Base)
-        const modulesRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/modules`, { headers });
-        const modulesData = await modulesRes.json();
-        if (modulesData.status === 'success') {
-          setModules(modulesData.data);
-        }
+        // 3. Quizzes
+        try {
+          const quizzesRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/quizzes`, { headers });
+          const quizzesData = await quizzesRes.json();
+          if (quizzesData.status === 'success') setQuizzes(quizzesData.data);
+        } catch (e) { console.error("Quizzes error", e); }
 
-        // Fetch Quizzes (for Assessment)
-        const quizzesRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/quizzes`, { headers });
-        const quizzesData = await quizzesRes.json();
-        if (quizzesData.status === 'success') {
-          setQuizzes(quizzesData.data);
-        }
+        // 4. Challenges
+        try {
+          const challengesRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/challenges`, { headers });
+          const challengesData = await challengesRes.json();
+          if (challengesData.status === 'success') setChallenges(challengesData.data);
+        } catch (e) { console.error("Challenges error", e); }
 
-        // Fetch user's completed quizzes
+        // 5. My Results
         try {
           const myResultsRes = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/quizzes/my-results`, { headers });
           const myResultsData = await myResultsRes.json();
@@ -99,30 +107,11 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
             setCompletedQuizIds(completedIds as Set<string>);
           }
         } catch (e) {
-          console.warn("Failed to fetch my-results");
+          console.warn("My-results error", e);
         }
 
-        // Fetch User Results to mark completed quizzes
-        // We'll just fetch user stats or specific results endpoint if available.
-        // For now, let's assume we can get 'my results' or we just infer from stats? 
-        // No, we need a list. Let's add a quick client-side filter or new endpoint later.
-        // Actually, we can just use the stats endpoint if it returned a list of completed IDs, 
-        // but it currently doesn't. 
-        // Let's hitting the results endpoint with a query? No, standard Firestore restrict.
-        // Let's just use a dedicated "my-results" call if possible, or skip for now and use local storage fallback?
-        // Better: Let's just quick-fetch all results for this user.
-        // Wait, standard users can't list all results? 
-        // Implementation Plan said: "Fetch all valid results for req.user.uid".
-        // Let's assume there's an endpoint or we just use GET /results? No, that's usually admin.
-        // Let's add a "my-results" endpoint or just filter?
-        // Let's assume we can fetch: GET /api/v1/users/me/results? 
-        // I haven't implemented that.
-        // Hack for now: We won't show "Completed" on reload until I make that endpoint.
-        // OR, simply rely on the fact that I just implemented sending results.
-
-        // Let's implement the 'Completed' badge logic optimistically for the current session at least.
       } catch (err) {
-        console.error('Failed to fetch learner data', err);
+        console.error('Failed to setup learner dashboard', err);
       } finally {
         setLoading(false);
       }
@@ -314,7 +303,7 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
             </div>
 
             <div className="flex bg-white/5 p-1 rounded-xl">
-              {['modules', 'quiz', 'playground', 'progress'].map((tab) => (
+              {['modules', 'quiz', 'playground', 'progress', 'challenges'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab as any)}
@@ -609,6 +598,51 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
             </div>
           )
         }
+
+        {activeTab === 'challenges' && (
+          <div className="max-w-6xl mx-auto py-8 text-offwhite animate-fade-in">
+            <div className="mb-12">
+              <h2 className="text-4xl font-black tracking-tight mb-2">Hardware Challenges</h2>
+              <p className="text-gray-400 font-medium">Solve Verilog problems and compete on the leaderboard.</p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {challenges.length > 0 ? (
+                challenges.map((challenge) => (
+                  <div
+                    key={challenge.id}
+                    onClick={() => navigate(`/challenge/${challenge.id}`)}
+                    className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-learner/50 hover:bg-white/5 transition-all cursor-pointer group relative overflow-hidden"
+                  >
+                    <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity text-6xl select-none grayscale group-hover:grayscale-0`}>
+                      {challenge.difficulty === 'Easy' ? '🟢' : challenge.difficulty === 'Medium' ? '🟠' : '🔴'}
+                    </div>
+
+                    <div className="relative z-10">
+                      <div className={`text-[10px] font-black uppercase tracking-widest mb-4 inline-block px-2 py-1 rounded ${challenge.difficulty === 'Easy' ? 'bg-green-500/10 text-green-500' :
+                        challenge.difficulty === 'Medium' ? 'bg-orange-500/10 text-orange-500' :
+                          'bg-red-500/10 text-red-500'
+                        }`}>
+                        {challenge.difficulty}
+                      </div>
+                      <h3 className="text-2xl font-bold mb-4 group-hover:text-learner transition-colors text-white">{challenge.title}</h3>
+                      <p className="text-gray-400 text-sm mb-6 line-clamp-3">{challenge.description}</p>
+
+                      <div className="flex justify-between items-center text-xs font-bold text-gray-500">
+                        <span>Verilog</span>
+                        <span className="group-hover:translate-x-1 transition-transform text-white">Solve &rarr;</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-full text-center py-20 text-gray-500 border border-dashed border-white/10 rounded-[32px]">
+                  No challenges available yet. Check back soon!
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {activeTab === 'progress' && (
           <div className="max-w-6xl mx-auto py-8 text-offwhite animate-fade-in">
