@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
 import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '../types';
 import logo from '../Assets/hdlbasewhitefinal-removebg-preview.png';
@@ -202,23 +203,21 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   };
 
   const confirmDownload = async () => {
-    if (!downloadingModule || !downloadingModule.code) {
-      alert("No code available to download.");
+    if (!downloadingModule) return;
+
+    // Multi-file download (Always ZIP)
+    if (downloadingModule.files && downloadingModule.files.length > 0) {
+      const zip = new JSZip();
+      downloadingModule.files.forEach((f: any) => zip.file(f.name, f.content));
+      const content = await zip.generateAsync({ type: "blob" });
+      saveAs(content, `${downloadingModule.name.replace(/\s+/g, '_')}.zip`);
+      setDownloadingModule(null);
       return;
     }
 
-    if (downloadFormat === 'ZIP') {
-      const zip = new JSZip();
-      zip.file(`${downloadingModule.name.replace(/\s+/g, '_')}.v`, downloadingModule.code);
-      const content = await zip.generateAsync({ type: "blob" });
-
-      const element = document.createElement("a");
-      element.href = URL.createObjectURL(content);
-      element.download = `${downloadingModule.name.replace(/\s+/g, '_')}.zip`;
-      document.body.appendChild(element);
-      element.click();
-      document.body.removeChild(element);
-      setDownloadingModule(null);
+    // Single file download (Legacy/Fallback)
+    if (!downloadingModule.code) {
+      alert("No code available to download.");
       return;
     }
 
@@ -229,13 +228,8 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
       default: extension = '.v';
     }
 
-    const element = document.createElement("a");
-    const file = new Blob([downloadingModule.code], { type: 'text/plain' });
-    element.href = URL.createObjectURL(file);
-    element.download = `${downloadingModule.name.replace(/\s+/g, '_')}${extension}`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    const blob = new Blob([downloadingModule.code], { type: 'text/plain;charset=utf-8' });
+    saveAs(blob, `${downloadingModule.name.replace(/\s+/g, '_')}${extension}`);
     setDownloadingModule(null);
   };
 
@@ -354,7 +348,7 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                   <div key={item.name} className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-learner/50 transition-all group">
                     <div className="text-[10px] text-gray-600 mb-3 font-black uppercase tracking-widest">Educational IP</div>
                     <h4 className="text-xl font-bold text-accent mb-8 group-hover:text-learner transition-colors">{item.name}</h4>
-                    <button onClick={() => handleDownloadClick(item)} className="w-full py-3 bg-white/5 text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-learner hover:text-white transition-all">Download</button>
+                    <button onClick={() => handleDownloadClick(item)} className="w-full py-3 bg-white/5 text-[10px] font-black rounded-xl uppercase tracking-widest hover:bg-learner hover:text-white transition-all">Download Source</button>
                   </div>
                 ))
               ) : (
@@ -547,19 +541,25 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                     <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 block mb-2">Module</label>
                     <div className="text-white font-bold">{downloadingModule.name}</div>
                   </div>
-                  <div>
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 block mb-2">Format</label>
-                    <select
-                      value={downloadFormat}
-                      onChange={(e) => setDownloadFormat(e.target.value)}
-                      className="w-full bg-matte border border-white/10 rounded-xl px-4 py-3 text-offwhite focus:border-learner outline-none transition-colors appearance-none font-bold text-sm"
-                    >
-                      <option value="Verilog">Verilog (.v)</option>
-                      <option value="VHDL">VHDL (.vhd)</option>
-                      <option value="SystemVerilog">SystemVerilog (.sv)</option>
-                      <option value="ZIP">ZIP Archive (.zip)</option>
-                    </select>
-                  </div>
+                  {(!downloadingModule.files || downloadingModule.files.length === 0) && (
+                    <div>
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-500 block mb-2">Format</label>
+                      <select
+                        value={downloadFormat}
+                        onChange={(e) => setDownloadFormat(e.target.value)}
+                        className="w-full bg-matte border border-white/10 rounded-xl px-4 py-3 text-offwhite focus:border-learner outline-none transition-colors appearance-none font-bold text-sm"
+                      >
+                        <option value="Verilog">Verilog (.v)</option>
+                        <option value="VHDL">VHDL (.vhd)</option>
+                        <option value="SystemVerilog">SystemVerilog (.sv)</option>
+                      </select>
+                    </div>
+                  )}
+                  {downloadingModule.files && downloadingModule.files.length > 0 && (
+                    <div className="text-xs text-gray-400 font-bold bg-white/5 p-4 rounded-xl border border-white/5">
+                      📦 Contains {downloadingModule.files.length} source files. Will download as ZIP.
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-3">
                   <button

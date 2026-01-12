@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 import { useNavigate } from 'react-router-dom';
@@ -105,7 +104,6 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
           name: m.name,
           type: m.type,
           size: m.size || '1 KB',
-          date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'Recent',
           date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'Recent',
           code: m.code || '',
           files: m.files || (m.code ? [{ name: 'source.v', content: m.code }] : [])
@@ -461,7 +459,6 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                   <p className="text-xs text-gray-500 mb-8 font-medium">{file.size} • Verified {file.date}</p>
                   <div className="flex gap-3">
                     <button onClick={() => openEditModule(file)} className="flex-1 text-[10px] font-black uppercase tracking-widest py-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">Edit</button>
-                    <button onClick={() => handleDownloadZip(file)} className="flex-1 text-[10px] font-black uppercase tracking-widest py-3 bg-contributor/10 text-contributor rounded-xl hover:bg-contributor/20 transition-colors">Download Source</button>
                   </div>
                 </div>
               ))}
