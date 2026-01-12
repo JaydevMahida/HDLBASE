@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import JSZip from 'jszip';
+import { saveAs } from 'file-saver';
+import { useNavigate } from 'react-router-dom';
 import { UserProfile } from '../types';
 import logo from '../Assets/hdlbasewhitefinal-removebg-preview.png';
 
@@ -14,7 +17,8 @@ interface MockFile {
   type: string;
   size: string;
   date: string;
-  code?: string;
+  files?: { name: string, content: string }[];
+  code?: string; // Legacy support
 }
 
 interface MockQuestion {
@@ -50,6 +54,9 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const [correctOption, setCorrectOption] = useState<number>(0);
   const [moduleCode, setModuleCode] = useState('');
   const [editingModuleId, setEditingModuleId] = useState<string | null>(null);
+
+  // New state for multi-file
+  const [uploadedFiles, setUploadedFiles] = useState<{ name: string, content: string }[]>([]);
 
 
 
@@ -99,7 +106,9 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
           type: m.type,
           size: m.size || '1 KB',
           date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'Recent',
-          code: m.code || ''
+          date: m.createdAt ? new Date(m.createdAt).toLocaleDateString() : 'Recent',
+          code: m.code || '',
+          files: m.files || (m.code ? [{ name: 'source.v', content: m.code }] : [])
         })));
 
         if (modulesData.message && modulesData.message.includes('Mock Mode')) {
@@ -152,7 +161,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
       const payload = {
         name: formData.get('moduleName') as string,
         language: formData.get('language') as string,
-        code: moduleCode,
+        // code: moduleCode, // Deprecated in favor of files
+        files: uploadedFiles,
         type: 'IP Core',
         description: 'Uploaded from Contributor Dashboard'
       };
@@ -173,8 +183,10 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
       if (response.ok) {
         await fetchData(); // Reload list
         setShowUpload(false);
+        setShowUpload(false);
         setEditingModuleId(null);
         setModuleCode('');
+        setUploadedFiles([]);
         form.reset();
       } else {
         const errData = await response.json();
@@ -189,29 +201,45 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    if (e.target.files) {
+      const newFiles: { name: string, content: string }[] = [];
+      Array.from(e.target.files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const text = event.target?.result as string;
+          setUploadedFiles(prev => [...prev, { name: file.name, content: text }]);
+        };
+        reader.readAsText(file);
+      });
+    }
+  };
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const text = event.target?.result as string;
-      setModuleCode(text);
-    };
-    reader.readAsText(file);
+  const removeFile = (index: number) => {
+    setUploadedFiles(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const handleDownloadZip = async (module: MockFile) => {
+    const zip = new JSZip();
+    const folder = zip.folder(module.name) || zip;
+
+    if (module.files && module.files.length > 0) {
+      module.files.forEach(f => folder.file(f.name, f.content));
+    } else if (module.code) {
+      folder.file(`${module.name}.v`, module.code);
+    } else {
+      alert("No source files found to download.");
+      return;
+    }
+
+    const content = await zip.generateAsync({ type: "blob" });
+    saveAs(content, `${module.name}.zip`);
   };
 
   const openEditModule = (module: MockFile) => {
     setEditingModuleId(module.id);
     setModuleCode(module.code || '');
+    setUploadedFiles(module.files || (module.code ? [{ name: `${module.name}.v`, content: module.code }] : []));
     setShowUpload(true);
-    // Note: We can't easily pre-fill the name/language inputs without controlled state for them or ref access, 
-    // but for now we are using uncontrolled inputs. 
-    // To fix this properly, we should switch to controlled inputs for the form.
-    // However, as a quick fix, let's just make sure the user knows they need to re-enter name if they want to keep it same, 
-    // OR switch to controlled inputs.
-    // Let's switch to controlled inputs quickly? No, too many changes.
-    // Let's defer input population for a second pass or use a timeout to set values? 
-    // Actually, let's just use defaultValue if we re-render.
   };
 
   const openQuestionModal = (q: MockQuestion | null = null) => {
@@ -432,7 +460,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                   <h3 className="text-xl font-bold mb-1">{file.name}</h3>
                   <p className="text-xs text-gray-500 mb-8 font-medium">{file.size} • Verified {file.date}</p>
                   <div className="flex gap-3">
-                    <button onClick={() => openEditModule(file)} className="flex-1 text-[10px] font-black uppercase tracking-widest py-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">Edit Code</button>
+                    <button onClick={() => openEditModule(file)} className="flex-1 text-[10px] font-black uppercase tracking-widest py-3 bg-white/5 rounded-xl hover:bg-white/10 transition-colors">Edit</button>
+                    <button onClick={() => handleDownloadZip(file)} className="flex-1 text-[10px] font-black uppercase tracking-widest py-3 bg-contributor/10 text-contributor rounded-xl hover:bg-contributor/20 transition-colors">Download Source</button>
                   </div>
                 </div>
               ))}
@@ -554,23 +583,43 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
 
                 <div className="space-y-2">
                   <div className="flex justify-between items-center">
-                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">HDL Source Code</label>
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-500">Source Files ({uploadedFiles.length})</label>
                     <label className="cursor-pointer text-[9px] font-black uppercase tracking-widest text-contributor hover:bg-contributor/10 px-2 py-1 rounded-md transition-all">
-                      <input type="file" accept=".v,.sv,.vhd,.txt,.zip" className="hidden" onChange={handleFileUpload} />
-                      📂 Import from Disk
+                      <input type="file" multiple accept=".v,.sv,.vhd,.txt" className="hidden" onChange={handleFileUpload} />
+                      + Add Files
                     </label>
                   </div>
-                  <textarea
-                    name="moduleCode"
-                    required
-                    value={moduleCode}
-                    onChange={(e) => setModuleCode(e.target.value)}
-                    className="w-full h-48 bg-matte border border-white/10 rounded-2xl px-6 py-4 text-offwhite focus:border-contributor outline-none transition-colors font-mono text-xs leading-relaxed resize-none"
-                    placeholder="Type code here or import from file..."
-                  />
+
+                  <div className="w-full bg-matte border border-white/10 rounded-2xl px-2 py-2 min-h-[120px] max-h-[200px] overflow-y-auto">
+                    {uploadedFiles.length === 0 ? (
+                      <div className="h-full flex flex-col items-center justify-center text-gray-600 space-y-2 py-8">
+                        <span className="text-2xl">📂</span>
+                        <span className="text-xs font-bold uppercase tracking-widest">No files uploaded</span>
+                      </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {uploadedFiles.map((file, idx) => (
+                          <div key={idx} className="flex justify-between items-center bg-white/5 px-3 py-2 rounded-lg group">
+                            <div className="flex items-center gap-2 overflow-hidden">
+                              <span className="text-xs">📄</span>
+                              <span className="text-xs font-medium text-offwhite truncate max-w-[200px]">{file.name}</span>
+                              <span className="text-[10px] text-gray-500">{(file.content.length / 1024).toFixed(1)} KB</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => removeFile(idx)}
+                              className="text-gray-500 hover:text-red-500 transition-colors p-1"
+                            >
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="flex gap-4 pt-6">
-                  <button type="button" onClick={() => { setShowUpload(false); setEditingModuleId(null); setModuleCode(''); }} className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition-colors">Abort</button>
+                  <button type="button" onClick={() => { setShowUpload(false); setEditingModuleId(null); setModuleCode(''); setUploadedFiles([]); }} className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-white/5 rounded-2xl hover:bg-white/10 transition-colors">Abort</button>
                   <button type="submit" disabled={uploading} className="flex-1 py-4 text-xs font-black uppercase tracking-widest bg-contributor text-white rounded-2xl shadow-xl shadow-contributor/20 active:scale-95 transition-all">
                     {uploading ? 'Processing...' : (editingModuleId ? 'Update IP' : 'Deploy IP')}
                   </button>
