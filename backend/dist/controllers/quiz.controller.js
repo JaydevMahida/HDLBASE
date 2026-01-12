@@ -39,6 +39,7 @@ const admin = __importStar(require("firebase-admin"));
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const pdf = require('pdf-parse');
 const mammoth = require('mammoth');
+const xlsx = require('xlsx');
 const getQuizzes = async (req, res, next) => {
     try {
         const db = (0, firebase_1.getDb)();
@@ -185,6 +186,50 @@ const generateQuizFromDocument = async (req, res, next) => {
     try {
         if (!req.file) {
             return res.status(400).json({ status: 'error', message: 'No file uploaded' });
+        }
+        // Handle Excel File (Deterministic Import)
+        if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' ||
+            req.file.originalname.endsWith('.xlsx')) {
+            try {
+                const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
+                const sheetName = workbook.SheetNames[0];
+                const sheet = workbook.Sheets[sheetName];
+                // Parse to JSON
+                const rows = xlsx.utils.sheet_to_json(sheet);
+                if (!rows || rows.length === 0) {
+                    return res.status(400).json({ status: 'error', message: 'Excel file is empty or could not be parsed' });
+                }
+                const questions = rows.map((row) => {
+                    // Extract SOLN index
+                    // Format examples: "C) Binary", "C) 4", "B)AND"
+                    const solnRaw = row['SOLN'] ? String(row['SOLN']).trim() : '';
+                    let correctIndex = 0;
+                    if (solnRaw.toUpperCase().startsWith('A'))
+                        correctIndex = 0;
+                    else if (solnRaw.toUpperCase().startsWith('B'))
+                        correctIndex = 1;
+                    else if (solnRaw.toUpperCase().startsWith('C'))
+                        correctIndex = 2;
+                    else if (solnRaw.toUpperCase().startsWith('D'))
+                        correctIndex = 3;
+                    return {
+                        text: row['QUES'],
+                        options: [
+                            String(row['A'] || ''),
+                            String(row['B'] || ''),
+                            String(row['C'] || ''),
+                            String(row['D'] || '')
+                        ],
+                        correct: correctIndex,
+                        difficulty: 'Medium' // Default
+                    };
+                }).filter((q) => q.text && q.options.some((o) => o)); // Basic validation
+                return res.status(200).json({ status: 'success', data: questions });
+            }
+            catch (excelError) {
+                console.error("Excel Parsing Error:", excelError);
+                return res.status(400).json({ status: 'error', message: 'Failed to parse Excel file. Ensure columns are QUES, A, B, C, D, SOLN.' });
+            }
         }
         let textContent = '';
         // 1. Parse File
