@@ -5,9 +5,21 @@ const firebase_1 = require("../config/firebase");
 const error_1 = require("../middleware/error");
 const createChallenge = async (req, res, next) => {
     try {
+        const db = (0, firebase_1.getDb)();
+        if (!db)
+            return res.status(201).json({ status: 'success', message: 'Mock Mode - Challenge Created' });
         const { title, description, difficulty, initialCode, testbench } = req.body;
         if (!title || !description || !testbench) {
             return next(new error_1.AppError('Missing required fields: title, description, and testbench are mandatory', 400));
+        }
+        // Check for duplicates (Case Insensitive)
+        const snapshot = await db.collection('challenges').get();
+        const duplicate = snapshot.docs.find((doc) => doc.data().title.toLowerCase() === title.trim().toLowerCase());
+        if (duplicate) {
+            return res.status(409).json({
+                status: 'error',
+                message: `Challenge with title "${duplicate.data().title}" already exists.`
+            });
         }
         const newChallenge = {
             title,
@@ -18,7 +30,7 @@ const createChallenge = async (req, res, next) => {
             authorId: req.user?.uid || 'anonymous',
             createdAt: new Date().toISOString()
         };
-        const docRef = await firebase_1.db.collection('challenges').add(newChallenge);
+        const docRef = await db.collection('challenges').add(newChallenge);
         res.status(201).json({
             status: 'success',
             data: {
@@ -34,7 +46,10 @@ const createChallenge = async (req, res, next) => {
 exports.createChallenge = createChallenge;
 const getAllChallenges = async (req, res, next) => {
     try {
-        const snapshot = await firebase_1.db.collection('challenges').orderBy('createdAt', 'desc').get();
+        const db = (0, firebase_1.getDb)();
+        if (!db)
+            return res.status(200).json({ status: 'success', data: [], message: 'Mock Mode' });
+        const snapshot = await db.collection('challenges').orderBy('createdAt', 'desc').get();
         const challenges = snapshot.docs.map((doc) => ({
             id: doc.id,
             ...doc.data(),
@@ -52,7 +67,10 @@ const getAllChallenges = async (req, res, next) => {
 exports.getAllChallenges = getAllChallenges;
 const getChallengeById = async (req, res, next) => {
     try {
-        const doc = await firebase_1.db.collection('challenges').doc(req.params.id).get();
+        const db = (0, firebase_1.getDb)();
+        if (!db)
+            return res.status(404).json({ message: 'Mock Mode' });
+        const doc = await db.collection('challenges').doc(req.params.id).get();
         if (!doc.exists) {
             return next(new error_1.AppError('Challenge not found', 404));
         }

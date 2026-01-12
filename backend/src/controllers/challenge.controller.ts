@@ -1,13 +1,29 @@
 import { Request, Response, NextFunction } from 'express';
-import { db } from '../config/firebase';
+import { getDb } from '../config/firebase';
 import { AppError } from '../middleware/error';
 
 export const createChallenge = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const db = getDb();
+        if (!db) return res.status(201).json({ status: 'success', message: 'Mock Mode - Challenge Created' });
+
         const { title, description, difficulty, initialCode, testbench } = req.body;
 
         if (!title || !description || !testbench) {
             return next(new AppError('Missing required fields: title, description, and testbench are mandatory', 400));
+        }
+
+        // Check for duplicates (Case Insensitive)
+        const snapshot = await db.collection('challenges').get();
+        const duplicate = snapshot.docs.find((doc: any) =>
+            doc.data().title.toLowerCase() === title.trim().toLowerCase()
+        );
+
+        if (duplicate) {
+            return res.status(409).json({
+                status: 'error',
+                message: `Challenge with title "${duplicate.data().title}" already exists.`
+            });
         }
 
         const newChallenge = {
@@ -36,6 +52,9 @@ export const createChallenge = async (req: Request, res: Response, next: NextFun
 
 export const getAllChallenges = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const db = getDb();
+        if (!db) return res.status(200).json({ status: 'success', data: [], message: 'Mock Mode' });
+
         const snapshot = await db.collection('challenges').orderBy('createdAt', 'desc').get();
         const challenges = snapshot.docs.map((doc: any) => ({
             id: doc.id,
@@ -54,6 +73,9 @@ export const getAllChallenges = async (req: Request, res: Response, next: NextFu
 
 export const getChallengeById = async (req: Request, res: Response, next: NextFunction) => {
     try {
+        const db = getDb();
+        if (!db) return res.status(404).json({ message: 'Mock Mode' });
+
         const doc = await db.collection('challenges').doc(req.params.id).get();
 
         if (!doc.exists) {
