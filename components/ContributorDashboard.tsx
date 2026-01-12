@@ -863,12 +863,12 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
 
                   <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/5 mb-4 mt-6">
                     <div>
-                      <div className="text-xs font-bold text-white mb-1">AI Generator</div>
-                      <div className="text-[10px] text-gray-500 uppercase tracking-widest">Upload PDF/DOCX/Excel to create questions</div>
+                      <div className="text-xs font-bold text-white mb-1">Bulk Import</div>
+                      <div className="text-[10px] text-gray-500 uppercase tracking-widest">Upload Excel file to import questions</div>
                     </div>
                     <label className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-pointer transition-colors shadow-lg shadow-purple-500/20">
                       {uploading ? 'Processing...' : 'Upload Document'}
-                      <input type="file" accept=".pdf,.docx,.txt,.xlsx" className="hidden" onChange={handleDocumentUpload} disabled={uploading} />
+                      <input type="file" accept=".xlsx" className="hidden" onChange={handleDocumentUpload} disabled={uploading} />
                     </label>
                   </div>
 
