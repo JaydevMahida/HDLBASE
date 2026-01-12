@@ -303,7 +303,7 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
             </div>
 
             <div className="flex bg-white/5 p-1 rounded-xl">
-              {['modules', 'quiz', 'playground', 'progress', 'challenges'].map((tab) => (
+              {['modules', 'quiz', 'playground', 'challenges', 'progress'].map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab as any)}

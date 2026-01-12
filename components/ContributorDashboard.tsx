@@ -520,16 +520,16 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                 Team
               </button>
               <button
-                onClick={() => setActiveTab('profile')}
-                className={`text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg font-black transition-all ${activeTab === 'profile' ? 'bg-contributor text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
-              >
-                Profile
-              </button>
-              <button
                 onClick={() => setActiveTab('challenges')}
                 className={`text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg font-black transition-all ${activeTab === 'challenges' ? 'bg-contributor text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
               >
                 Challenges
+              </button>
+              <button
+                onClick={() => setActiveTab('profile')}
+                className={`text-[10px] uppercase tracking-widest px-4 py-2 rounded-lg font-black transition-all ${activeTab === 'profile' ? 'bg-contributor text-white shadow-lg' : 'text-gray-500 hover:text-gray-300'}`}
+              >
+                Profile
               </button>
             </div>
           </div>
