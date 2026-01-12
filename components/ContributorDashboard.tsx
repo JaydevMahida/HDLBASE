@@ -940,22 +940,7 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                     </div>
                   </div>
 
-                  {/* 2. Commit Graph / Heatmap (Mock) */}
-                  <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5 overflow-hidden">
-                    <h3 className="text-lg font-black tracking-tight mb-6 flex items-center gap-2">
-                      <span className="text-contributor">///</span> Deployment Frequency
-                    </h3>
-                    <div className="flex gap-1 flex-wrap justify-between opacity-50 hover:opacity-100 transition-opacity">
-                      {Array.from({ length: 52 }).map((_, i) => (
-                        <div key={i} className="w-2 h-8 rounded-sm bg-white/5 flex flex-col gap-1">
-                          {Array.from({ length: 7 }).map((_, j) => (
-                            <div key={j} className={`w-2 h-2 rounded-sm ${Math.random() > 0.8 ? 'bg-contributor/80' : 'bg-transparent'}`}></div>
-                          ))}
-                        </div>
-                      ))}
-                    </div>
-                    <div className="text-[10px] text-gray-600 font-mono mt-4 text-right">Last 12 Months</div>
-                  </div>
+
 
                   {/* 3. Latest Uploads */}
                   <div className="bg-gunmetal p-8 rounded-[32px] border border-white/5">
