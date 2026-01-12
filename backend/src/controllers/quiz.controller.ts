@@ -30,6 +30,19 @@ export const createQuiz = async (req: Request, res: Response, next: NextFunction
             return res.status(400).json({ status: 'error', message: 'Invalid quiz data. Title and at least one question required.' });
         }
 
+        // Check for duplicates (Case Insensitive)
+        const snapshot = await db.collection('quizzes').get();
+        const duplicate = snapshot.docs.find(doc =>
+            doc.data().title.toLowerCase() === title.trim().toLowerCase()
+        );
+
+        if (duplicate) {
+            return res.status(409).json({
+                status: 'error',
+                message: `Quiz with title "${duplicate.data().title}" already exists.`
+            });
+        }
+
         const newQuiz = {
             title,
             description: description || '',

@@ -23,6 +23,15 @@ const createModule = async (req, res, next) => {
         if (!db)
             return res.status(201).json({ status: 'success', message: 'Mock Mode - Created' });
         const { name, type, files, description, language } = req.body;
+        // Check for duplicates (Case Insensitive)
+        const snapshot = await db.collection('modules').get();
+        const duplicate = snapshot.docs.find(doc => doc.data().name.toLowerCase() === name.trim().toLowerCase());
+        if (duplicate) {
+            return res.status(409).json({
+                status: 'error',
+                message: `Module with name "${duplicate.data().name}" already exists.`
+            });
+        }
         const newModule = {
             name,
             type: type || 'IP Config',

@@ -24,6 +24,19 @@ export const createModule = async (req: Request, res: Response, next: NextFuncti
 
         const { name, type, files, description, language } = req.body;
 
+        // Check for duplicates (Case Insensitive)
+        const snapshot = await db.collection('modules').get();
+        const duplicate = snapshot.docs.find(doc =>
+            doc.data().name.toLowerCase() === name.trim().toLowerCase()
+        );
+
+        if (duplicate) {
+            return res.status(409).json({
+                status: 'error',
+                message: `Module with name "${duplicate.data().name}" already exists.`
+            });
+        }
+
         const newModule = {
             name,
             type: type || 'IP Config',
