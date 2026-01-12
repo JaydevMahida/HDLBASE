@@ -17,46 +17,44 @@ class CompilerService {
             fs_1.default.mkdirSync(this.tempDir, { recursive: true });
         }
     }
-    async compileAndRun(code, language) {
+    async compileAndRun(designCode, testbenchCode, language) {
         if (language !== 'Verilog') {
             return { output: `[Error] ${language} simulation is not supported efficiently in this environment yet. Only Verilog is supported via Icarus Verilog.`, waveformData: null };
         }
         const runId = (0, uuid_1.v4)();
-        const srcPath = path_1.default.join(this.tempDir, `${runId}.v`);
-        // const outPath = path.join(this.tempDir, `${runId}.out`); 
-        // Icarus default output is a.out usually, but we can specify -o
-        // Cleanup function
+        const designPath = path_1.default.join(this.tempDir, `design_${runId}.v`);
+        const tbPath = path_1.default.join(this.tempDir, `tb_${runId}.v`);
+        const outPath = path_1.default.join(this.tempDir, `${runId}.out`);
         const cleanup = () => {
-            if (fs_1.default.existsSync(srcPath))
-                fs_1.default.unlinkSync(srcPath);
-            // if (fs.existsSync(outPath)) fs.unlinkSync(outPath);
+            if (fs_1.default.existsSync(designPath))
+                fs_1.default.unlinkSync(designPath);
+            if (fs_1.default.existsSync(tbPath))
+                fs_1.default.unlinkSync(tbPath);
+            if (fs_1.default.existsSync(outPath))
+                fs_1.default.unlinkSync(outPath);
         };
         try {
-            fs_1.default.writeFileSync(srcPath, code);
-            // Attempt to execute iverilog
-            // We verify syntax only for now (-t null) or try to compile
-            // For real simulation we need a testbench.
-            // If the user code has no testbench, it won't produce output.
-            // We assume code has a module top; logic here can be expanded.
+            // Write files
+            fs_1.default.writeFileSync(designPath, designCode);
+            fs_1.default.writeFileSync(tbPath, testbenchCode);
+            // Check compiler availability
             try {
-                // Check if iverilog is available
                 await execPromise('iverilog -V');
             }
             catch (e) {
-                // Fallback if not installed
                 cleanup();
                 return {
-                    output: `[System] 'iverilog' compiler not found on server.\n[Mock Output] Compilation Successful (Mock Mode).\n[Simulation] Running testbench...\n[Result] All checks passed for: ${runId}`,
+                    output: `[System] 'iverilog' compiler not found.\n[Mock Output] Compilation Successful (Mock Mode).\n[Simulation] Running testbench...\n[Result] All checks passed for: ${runId}\n(Install Icarus Verilog to see real output)`,
                     waveformData: null
                 };
             }
-            // Real compilation attempt
-            const { stdout, stderr } = await execPromise(`iverilog -o ${path_1.default.join(this.tempDir, runId)} ${srcPath}`);
-            // If we got here, compilation succeeded. Now run it?
-            // Usually requires 'vvp'. Let's stick to compile check for safety or just return stdout.
+            // Compile: iverilog -o out design.v tb.v
+            await execPromise(`iverilog -o ${outPath} ${designPath} ${tbPath}`);
+            // Run: vvp out with 5s timeout
+            const { stdout, stderr } = await execPromise(`vvp ${outPath}`, { timeout: 5000 });
             cleanup();
             return {
-                output: `[Compiler] Compilation successful.\n${stdout || stderr}`,
+                output: stdout + (stderr ? `\n[Stderr]\n${stderr}` : ''),
                 waveformData: null
             };
         }

@@ -43,5 +43,13 @@ router.use(auth_1.protect);
 router.route('/')
     .get(quizController.getQuizzes)
     .post((0, rbac_1.restrictTo)(types_1.UserRole.CONTRIBUTOR, types_1.UserRole.ADMIN), quizController.createQuiz);
+// Submit Result
 router.post('/results', quizController.submitResult);
+// Get My Results (Learner)
+router.get('/my-results', quizController.getMyResults);
+// Get Results for a specific quiz (Contributor only?)
+router.get('/:id/results', (0, rbac_1.restrictTo)(types_1.UserRole.CONTRIBUTOR, types_1.UserRole.ADMIN), quizController.getQuizResults);
+// Generate Quiz from File
+const upload = require('multer')({ storage: require('multer').memoryStorage() });
+router.post('/generate', (0, rbac_1.restrictTo)(types_1.UserRole.CONTRIBUTOR, types_1.UserRole.ADMIN), upload.single('file'), quizController.generateQuizFromDocument);
 exports.default = router;

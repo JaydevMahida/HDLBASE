@@ -46,7 +46,11 @@ const routes_1 = __importDefault(require("./routes"));
 const app = (0, express_1.default)();
 // Middleware
 app.use((0, helmet_1.default)());
-app.use((0, cors_1.default)());
+app.use((0, cors_1.default)({
+    origin: '*', // Allow all origins for now to support cross-device testing
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS']
+}));
 app.use((0, morgan_1.default)('dev'));
 app.use((0, compression_1.default)());
 app.use((0, express_1.json)());

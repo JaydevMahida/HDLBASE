@@ -46,7 +46,7 @@ const router = (0, express_1.Router)();
 const simulationSchema = joi_1.default.object({
     code: joi_1.default.string().required(),
     language: joi_1.default.string().valid('Verilog', 'VHDL', 'SystemVerilog').default('Verilog'),
-    testbench: joi_1.default.string().optional()
+    testbenchCode: joi_1.default.string().optional().allow('')
 });
 router.post('/run', auth_1.protect, (0, validate_1.validate)(simulationSchema), simulationController.runSimulation);
 exports.default = router;

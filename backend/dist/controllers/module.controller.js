@@ -22,11 +22,11 @@ const createModule = async (req, res, next) => {
         const db = (0, firebase_1.getDb)();
         if (!db)
             return res.status(201).json({ status: 'success', message: 'Mock Mode - Created' });
-        const { name, type, code, description, language } = req.body;
+        const { name, type, files, description, language } = req.body;
         const newModule = {
             name,
             type: type || 'IP Config',
-            code,
+            files: files || [], // Store array of { name, content }
             description,
             language: language || 'Verilog',
             size: '1.2 KB', // Mock size calculation
@@ -64,12 +64,12 @@ const updateModule = async (req, res, next) => {
         const db = (0, firebase_1.getDb)();
         if (!db)
             return res.status(200).json({ status: 'success', message: 'Mock Mode - Updated' });
-        const { name, language, code, description } = req.body;
+        const { name, language, files, description } = req.body;
         // Ensure user owns the module or is admin? (Simplification: Contributor can edit any for now, or check authorId)
         await db.collection('modules').doc(req.params.id).update({
             name,
             language,
-            code,
+            files,
             description,
             updatedAt: new Date().toISOString()
         });
