@@ -1,6 +1,9 @@
 import { Request, Response, NextFunction } from 'express';
 import { getDb } from '../config/firebase';
 import * as admin from 'firebase-admin';
+const { GoogleGenerativeAI } = require('@google/generative-ai');
+const pdf = require('pdf-parse');
+const mammoth = require('mammoth');
 
 export const getQuizzes = async (req: Request, res: Response, next: NextFunction) => {
     try {
@@ -153,6 +156,88 @@ export const getMyResults = async (req: Request, res: Response, next: NextFuncti
         const results = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
         res.status(200).json({ status: 'success', data: results });
     } catch (error) {
+        next(error);
+    }
+};
+
+export const generateQuizFromDocument = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+        if (!req.file) {
+            return res.status(400).json({ status: 'error', message: 'No file uploaded' });
+        }
+
+        let textContent = '';
+
+        // 1. Parse File
+        if (req.file.mimetype === 'application/pdf') {
+            const data = await pdf(req.file.buffer);
+            textContent = data.text;
+        } else if (req.file.mimetype === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') {
+            const result = await mammoth.extractRawText({ buffer: req.file.buffer });
+            textContent = result.value;
+        } else {
+            // Fallback for text files
+            textContent = req.file.buffer.toString('utf-8');
+        }
+
+        if (!textContent || textContent.length < 50) {
+            return res.status(400).json({ status: 'error', message: 'File content too short or unreadable' });
+        }
+
+        // 2. Call Gemini AI
+        const apiKey = process.env.GEMINI_API_KEY;
+        if (!apiKey) {
+            console.warn("Missing GEMINI_API_KEY, returning mock questions.");
+            return res.status(200).json({
+                status: 'success',
+                data: [
+                    { text: "Mock Question 1 from File?", options: ["A", "B", "C", "D"], correct: 0, difficulty: "Medium" },
+                    { text: "Mock Question 2 from File?", options: ["Yes", "No", "Maybe", "So"], correct: 1, difficulty: "Entry" }
+                ]
+            });
+        }
+
+        const genAI = new GoogleGenerativeAI(apiKey);
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+
+        const prompt = `
+            You are an expert educational assistant suitable for generating quizzes for hardware engineering students.
+            Analyze the following text and generate 5 multiple-choice questions.
+            
+            Return ONLY a valid JSON array of objects. Do not include markdown formatting (like \`\`\`json).
+            Format:
+            [
+                {
+                    "text": "Question text here?",
+                    "options": ["Option A", "Option B", "Option C", "Option D"],
+                    "correct": 0, // Index of correct option (0-3)
+                    "difficulty": "Medium" // Entry, Medium, or Senior
+                }
+            ]
+
+            Text Content:
+            ${textContent.substring(0, 15000)} // Limit context to avoid token limits
+        `;
+
+        const result = await model.generateContent(prompt);
+        const response = await result.response;
+        const text = response.text();
+
+        // Cleanup markdown if present
+        const jsonStr = text.replace(/```json/g, '').replace(/```/g, '').trim();
+
+        let questions = [];
+        try {
+            questions = JSON.parse(jsonStr);
+        } catch (e) {
+            console.error("AI Parsing Error", text);
+            return res.status(500).json({ status: 'error', message: 'Failed to parse AI response' });
+        }
+
+        res.status(200).json({ status: 'success', data: questions });
+
+    } catch (error) {
+        console.error("Quiz Gen Error:", error);
         next(error);
     }
 };

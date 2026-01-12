@@ -21,4 +21,8 @@ router.get('/my-results', quizController.getMyResults);
 // Get Results for a specific quiz (Contributor only?)
 router.get('/:id/results', restrictTo(UserRole.CONTRIBUTOR, UserRole.ADMIN), quizController.getQuizResults);
 
+// Generate Quiz from File
+const upload = require('multer')({ storage: require('multer').memoryStorage() });
+router.post('/generate', restrictTo(UserRole.CONTRIBUTOR, UserRole.ADMIN), upload.single('file'), quizController.generateQuizFromDocument);
+
 export default router;

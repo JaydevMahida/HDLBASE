@@ -58,6 +58,7 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
   const [downloadFormat, setDownloadFormat] = useState('Verilog');
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+  const [quizSearchQuery, setQuizSearchQuery] = useState('');
 
   useEffect(() => {
     const fetchData = async () => {
@@ -378,12 +379,26 @@ const LearnerDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
             {!activeQuiz ? (
               // QUIZ LIST VIEW
               <div>
-                <div className="mb-12">
-                  <h2 className="text-4xl font-black tracking-tight">Available Quizzes</h2>
-                  <p className="text-gray-400 font-medium">Verify your skills with community-curated assessments.</p>
+                <div className="mb-12 flex flex-col md:flex-row justify-between items-end gap-6">
+                  <div>
+                    <h2 className="text-4xl font-black tracking-tight mb-2">Available Quizzes</h2>
+                    <p className="text-gray-400 font-medium">Verify your skills with community-curated assessments.</p>
+                  </div>
+                  <div className="relative w-full md:w-80">
+                    <input
+                      type="text"
+                      placeholder="Search quizzes..."
+                      value={quizSearchQuery}
+                      onChange={(e) => setQuizSearchQuery(e.target.value)}
+                      className="w-full bg-gunmetal border border-white/10 rounded-2xl px-6 py-4 pl-12 text-offwhite focus:border-learner outline-none transition-colors font-bold shadow-lg shadow-black/20"
+                    />
+                    <svg className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                  {quizzes.map(quiz => (
+                  {quizzes.filter(q => q.title.toLowerCase().includes(quizSearchQuery.toLowerCase())).map(quiz => (
                     <div key={quiz.id} onClick={() => startQuiz(quiz)} className="bg-gunmetal p-8 rounded-[32px] border border-white/5 hover:border-learner/50 hover:bg-white/5 transition-all cursor-pointer group">
                       <div className="text-[10px] text-gray-500 mb-4 font-black uppercase tracking-widest">{quiz.questions?.length || 0} Questions</div>
                       <h3 className="text-2xl font-bold mb-4 group-hover:text-learner transition-colors">{quiz.title}</h3>

@@ -300,6 +300,53 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
     setCurrentNewQuestion({ text: '', difficulty: 'Medium', correct: 0, options: ['', '', '', ''] });
   };
 
+  const handleDocumentUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+      const session = localStorage.getItem('hdlbase_mock_session');
+      const sessionData = JSON.parse(session || '{}');
+      const token = sessionData.token || sessionData.uid;
+
+      const response = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5000'}/api/v1/quizzes/generate`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+      if (data.status === 'success') {
+        const aiQuestions = data.data.map((q: any) => ({
+          id: Date.now().toString() + Math.random(),
+          text: q.text,
+          options: q.options,
+          correct: q.correct,
+          difficulty: q.difficulty
+        }));
+        setNewQuizQuestions(prev => [...prev, ...aiQuestions]);
+        alert(`Generated ${aiQuestions.length} questions from document!`);
+      } else {
+        alert(`Generation Failed: ${data.message}`);
+      }
+    } catch (e) {
+      console.error("Upload error", e);
+      alert("Failed to upload/generate");
+    } finally {
+      setUploading(false);
+      // Reset input
+      event.target.value = '';
+    }
+  };
+
+
+
   const publishQuiz = async () => {
     if (!quizTitle || newQuizQuestions.length === 0) {
       alert("Title and at least one question required.");
@@ -641,7 +688,20 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                       className="w-full bg-matte border border-white/10 rounded-2xl px-6 py-4 text-offwhite focus:border-contributor outline-none transition-colors font-bold text-lg"
                       placeholder="e.g. Verilog Finite State Machines"
                     />
+
                   </div>
+
+                  <div className="flex justify-between items-center bg-white/5 p-4 rounded-xl border border-white/5 mb-4 mt-6">
+                    <div>
+                      <div className="text-xs font-bold text-white mb-1">AI Generator</div>
+                      <div className="text-[10px] text-gray-500 uppercase tracking-widest">Upload PDF/DOCX to auto-create questions</div>
+                    </div>
+                    <label className="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest cursor-pointer transition-colors shadow-lg shadow-purple-500/20">
+                      {uploading ? 'Processing...' : 'Upload Document'}
+                      <input type="file" accept=".pdf,.docx,.txt" className="hidden" onChange={handleDocumentUpload} disabled={uploading} />
+                    </label>
+                  </div>
+
 
                   {/* Question List Preview */}
                   <div className="space-y-3">
@@ -659,6 +719,8 @@ const ContributorDashboard: React.FC<Props> = ({ profile, onSignOut }) => {
                     ))}
                     {newQuizQuestions.length === 0 && <div className="text-xs text-gray-600 italic text-center py-4 border border-dashed border-white/5 rounded-xl">No questions added yet.</div>}
                   </div>
+
+
 
                   <div className="border-t border-white/10 pt-6">
                     <h4 className="text-xs font-black uppercase tracking-widest text-contributor mb-4">Add New Question</h4>
